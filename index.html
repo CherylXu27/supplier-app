@@ -3113,7 +3113,51 @@ function confirmSmartPaste() {
 const GH_CONFIG_KEY = 'cheryl_gh_sync_config';
 const GH_TOKEN_KEY = 'gh_token';
 function getGhToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
-function setGhToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
+function setGhToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); idbSet('gh_token', t); }
+
+// ===== IndexedDB backup (more persistent than localStorage) =====
+const IDB_NAME = 'supplier_wb';
+const IDB_STORE = 'kv';
+function idbGet(key) {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) { resolve(null); return; }
+        try {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const g = tx.objectStore(IDB_STORE).get(key);
+          g.onsuccess = () => resolve(g.result || null);
+          g.onerror = () => resolve(null);
+        } catch(err) { resolve(null); }
+      };
+      req.onerror = () => resolve(null);
+    } catch(e) { resolve(null); }
+  });
+}
+function idbSet(key, val) {
+  try {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) return;
+      try {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(val, key);
+      } catch(err) {}
+    };
+  } catch(e) {}
+}
+
 let ghSyncTimer = null;
 let ghSyncing = false;
 let hasUnsyncedChanges = false;
@@ -3609,7 +3653,7 @@ init();
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').then(function(reg) {
+    navigator.serviceWorker.register('sw.js?v=20260805').then(function(reg) {
       console.log('PWA Service Worker registered');
     }).catch(function(err) {
       console.log('SW registration failed:', err);
