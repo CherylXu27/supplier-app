@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+<title>登录 - 供应商数据管理</title>
+<meta name="theme-color" content="#2563EB">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="供应商管理">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --primary: #2563EB;
+  --primary-dark: #1D4ED8;
+  --primary-light: #DBEAFE;
+  --bg: #F3F4F6;
+  --surface: #FFFFFF;
+  --border: #E5E7EB;
+  --text: #1F2937;
+  --text-secondary: #6B7280;
+  --error: #DC2626;
+  --error-bg: #FEE2E2;
+  --success: #059669;
+  --success-bg: #D1FAE5;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 25px rgba(0,0,0,0.10), 0 4px 10px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 24px 16px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+  background: linear-gradient(135deg, #EFF6FF 0%, #F3F4F6 50%, #EFF6FF 100%);
+}
+
+/* ===== Login Card ===== */
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.login-header {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  padding: 32px 24px 28px;
+  text-align: center;
+}
+
+.login-header .icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.login-header h1 {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.login-header p {
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.login-body {
+  padding: 28px 24px 20px;
+}
+
+/* ===== Form Fields ===== */
+.field-group {
+  margin-bottom: 18px;
+}
+
+.field-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper .field-icon {
+  position: absolute;
+  left: 12px;
+  font-size: 18px;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  color: var(--text);
+  background: var(--surface);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.input-wrapper input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.input-wrapper input::placeholder {
+  color: #9CA3AF;
+}
+
+.input-wrapper .toggle-pwd {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--text-secondary);
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.input-wrapper .toggle-pwd:hover {
+  background: var(--border);
+}
+
+/* ===== Login Button ===== */
+.btn-login {
+  width: 100%;
+  padding: 13px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-login:hover { background: var(--primary-dark); }
+.btn-login:active { transform: scale(0.98); }
+.btn-login:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-login .spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ===== Links ===== */
+.login-links {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 18px;
+}
+
+.login-links a {
+  font-size: 13px;
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.login-links a:hover { color: var(--primary-dark); text-decoration: underline; }
+
+/* ===== Alert ===== */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  margin-bottom: 16px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert.show { display: flex; }
+.alert.error { background: var(--error-bg); color: var(--error); }
+.alert.success { background: var(--success-bg); color: var(--success); }
+.alert.info { background: var(--primary-light); color: var(--primary-dark); }
+
+/* ===== Footer ===== */
+.login-footer {
+  text-align: center;
+  padding: 16px 24px 20px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border);
+}
+
+.login-footer .lock-icon {
+  margin-right: 4px;
+}
+
+/* ===== Modal ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+  animation: fadeIn 0.2s;
+}
+
+.modal-overlay.show { display: flex; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 380px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: slideUp 0.25s;
+}
+
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.modal-close:hover { background: var(--border); }
+
+.modal-body { padding: 20px; }
+
+.modal-body .field-group:last-child { margin-bottom: 0; }
+
+.modal-footer {
+  display: flex;
+  gap: 10px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 11px;
+  background: var(--border);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover { background: #D1D5DB; }
+
+.btn-primary {
+  flex: 1;
+  padding: 11px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-primary .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ===== Forgot Password Modal ===== */
+.forgot-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+
+.forgot-content code {
+  background: var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-family: "SF Mono", "Fira Code", monospace;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 480px) {
+  body { padding: 16px 12px; }
+  .login-header { padding: 24px 20px 22px; }
+  .login-header h1 { font-size: 20px; }
+  .login-body { padding: 22px 20px 16px; }
+  .login-links { gap: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="login-card">
+  <div class="login-header">
+    <div class="icon">&#128203;</div>
+    <h1>供应商数据管理</h1>
+    <p>采购助手 · 登录系统</p>
+  </div>
+
+  <div class="login-body">
+    <div class="alert" id="alert-box"></div>
+
+    <div class="field-group">
+      <label>账户名</label>
+      <div class="input-wrapper">
+        <span class="field-icon">&#128100;</span>
+        <input type="text" id="username" placeholder="请输入账户名" autocomplete="username" autocapitalize="none">
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>密码</label>
+      <div class="input-wrapper">
+        <span class="field-icon">&#128274;</span>
+        <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
+        <button class="toggle-pwd" id="toggle-pwd" type="button">&#128065;</button>
+      </div>
+    </div>
+
+    <button class="btn-login" id="btn-login" onclick="handleLogin()">
+      <span id="btn-login-text">登 录</span>
+    </button>
+
+    <div class="login-links">
+      <a onclick="openTokenModal()">密钥设置</a>
+      <a onclick="openChangePasswordModal()">修改密码</a>
+      <a onclick="openForgotPasswordModal()">忘记密码？</a>
+    </div>
+  </div>
+
+  <div class="login-footer">
+    <span class="lock-icon">&#128274;</span>数据存储于 GitHub 私有仓库，仅你可见
+  </div>
+</div>
+
+<!-- ===== Change Password Modal ===== -->
+<div class="modal-overlay" id="modal-change-pwd" onclick="if(event.target===this)closeModal('modal-change-pwd')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>修改密码</h3>
+      <button class="modal-close" onclick="closeModal('modal-change-pwd')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="change-pwd-alert"></div>
+      <div class="field-group">
+        <label>原密码</label>
+        <div class="input-wrapper">
+          <span class="field-icon">&#128274;</span>
+          <input type="password" id="old-pwd" placeholder="请输入原密码" autocomplete="current-password">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>新密码</label>
+        <div class="input-wrapper">
+          <span class="field-icon">&#128274;</span>
+          <input type="password" id="new-pwd" placeholder="请输入新密码" autocomplete="new-password">
+        </div>
+      </div>
+      <div class="field-group">
+        <label>确认新密码</label>
+        <div class="input-wrapper">
+          <span class="field-icon">&#128274;</span>
+          <input type="password" id="confirm-pwd" placeholder="请再次输入新密码" autocomplete="new-password">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-change-pwd')">取消</button>
+      <button class="btn-primary" id="btn-change-pwd" onclick="handleChangePassword()">
+        <span id="btn-change-pwd-text">确认修改</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Forgot Password Modal ===== -->
+<div class="modal-overlay" id="modal-forgot-pwd" onclick="if(event.target===this)closeModal('modal-forgot-pwd')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>忘记密码？</h3>
+      <button class="modal-close" onclick="closeModal('modal-forgot-pwd')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="forgot-content">
+        请联系管理员重置密码（管理员即你自己），或直接登录 GitHub 仓库手动修改 <code>config/admin.json</code> 文件中的 <code>password</code> 字段。
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="closeModal('modal-forgot-pwd')">我知道了</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Token Setup Modal ===== -->
+<div class="modal-overlay" id="modal-token" onclick="if(event.target===this)closeModal('modal-token')">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>GitHub 密钥设置</h3>
+      <button class="modal-close" onclick="closeModal('modal-token')">&#10005;</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert" id="token-alert"></div>
+      <div class="forgot-content" style="margin-bottom:14px;">
+        首次使用需配置 GitHub 密钥（Personal Access Token），用于安全访问你的数据仓库。密钥仅保存在本设备浏览器，不会上传到任何服务器。
+      </div>
+      <div class="field-group">
+        <label>GitHub Token</label>
+        <div class="input-wrapper">
+          <span class="field-icon">&#128273;</span>
+          <input type="password" id="token-input" placeholder="粘贴你的 GitHub Token" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-token')">取消</button>
+      <button class="btn-primary" id="btn-save-token" onclick="saveTokenFromInput()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== GitHub Config =====
+const GH_CONFIG = {
+  owner: 'CherylXu27',
+  repo: 'supplier',
+  adminPath: 'config/admin.json'
+};
+
+// Token stored in localStorage (NOT hardcoded in source) for security
+const GH_TOKEN_KEY = 'gh_token';
+function getGhToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
+function setGhToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
+function hasGhToken() { return !!getGhToken(); }
+
+const AUTH_KEY = 'supplier_auth';
+const LOGIN_TS_KEY = 'supplier_login_ts';
+const ADMIN_CACHE_KEY = 'supplier_admin_cache';
+const ADMIN_CACHE_TS_KEY = 'supplier_admin_cache_ts';
+
+// ===== Try fetch through multiple methods (direct + proxies) =====
+async function tryFetch(url, options = {}, timeoutMs = 10000) {
+  const urls = [
+    url,
+    'https://corsproxy.io/?url=' + encodeURIComponent(url),
+    'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    'https://proxy.cors.sh/' + url,
+  ];
+
+  for (const fetchUrl of urls) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      const resp = await fetch(fetchUrl, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      if (resp && resp.ok) return resp;
+    } catch(e) { continue; }
+  }
+  return null;
+}
+
+// ===== GitHub API fetch with timeout + multi CORS proxy fallback (for PUT/GET requests) =====
+async function ghFetch(url, options = {}, timeoutMs = 15000) {
+  // Try 1: Direct connection
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    const resp = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return resp;
+  } catch(e1) {
+    // Try 2: corsproxy.io (supports all methods, forwards headers)
+    try {
+      const proxyUrl = 'https://corsproxy.io/?url=' + encodeURIComponent(url);
+      const controller2 = new AbortController();
+      const timer2 = setTimeout(() => controller2.abort(), timeoutMs);
+      const resp2 = await fetch(proxyUrl, { ...options, signal: controller2.signal });
+      clearTimeout(timer2);
+      if (resp2.ok) return resp2;
+    } catch(e2) {}
+    // Try 3: allorigins.win
+    try {
+      const proxyUrl2 = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+      const controller3 = new AbortController();
+      const timer3 = setTimeout(() => controller3.abort(), timeoutMs);
+      const resp3 = await fetch(proxyUrl2, { ...options, signal: controller3.signal });
+      clearTimeout(timer3);
+      if (resp3.ok) return resp3;
+    } catch(e3) {}
+    // Try 4: cors.sh
+    try {
+      const proxyUrl3 = 'https://proxy.cors.sh/' + url;
+      const controller4 = new AbortController();
+      const timer4 = setTimeout(() => controller4.abort(), timeoutMs);
+      const resp4 = await fetch(proxyUrl3, { ...options, signal: controller4.signal });
+      clearTimeout(timer4);
+      if (resp4.ok) return resp4;
+    } catch(e4) {}
+    throw new Error('所有网络通道均失败');
+  }
+}
+
+// ===== UTF-8 safe base64 encode/decode =====
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function base64ToUtf8(b64) {
+  return decodeURIComponent(escape(atob(b64)));
+}
+
+// ===== Read admin.json from GitHub (multi-URL + multi-proxy + local cache) =====
+async function fetchAdminConfig() {
+  const apiHeaders = {
+    'Authorization': `Bearer ${getGhToken()}`,
+    'Accept': 'application/vnd.github+json'
+  };
+  const rawHeaders = {
+    'Authorization': `Bearer ${getGhToken()}`
+  };
+
+  // URL candidates: API (returns JSON with base64+sha) + raw (returns plain text)
+  const apiUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.adminPath}`;
+  const rawUrlMain = `https://raw.githubusercontent.com/${GH_CONFIG.owner}/${GH_CONFIG.repo}/main/${GH_CONFIG.adminPath}`;
+  const rawUrlMaster = `https://raw.githubusercontent.com/${GH_CONFIG.owner}/${GH_CONFIG.repo}/master/${GH_CONFIG.adminPath}`;
+
+  // Try 1: GitHub Contents API (gives us SHA for updates)
+  const apiResp = await tryFetch(apiUrl, { headers: apiHeaders }, 10000);
+  if (apiResp) {
+    try {
+      const data = await apiResp.json();
+      const content = base64ToUtf8(data.content.replace(/\n/g, ''));
+      const config = JSON.parse(content);
+      localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(config));
+      localStorage.setItem(ADMIN_CACHE_TS_KEY, Date.now().toString());
+      return { config, sha: data.sha, cached: false };
+    } catch(e) {}
+  }
+
+  // Try 2: raw.githubusercontent.com (main branch)
+  const rawResp = await tryFetch(rawUrlMain, { headers: rawHeaders }, 10000);
+  if (rawResp) {
+    try {
+      const text = await rawResp.text();
+      const config = JSON.parse(text);
+      localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(config));
+      localStorage.setItem(ADMIN_CACHE_TS_KEY, Date.now().toString());
+      return { config, sha: null, cached: false };
+    } catch(e) {}
+  }
+
+  // Try 3: raw.githubusercontent.com (master branch)
+  const rawResp2 = await tryFetch(rawUrlMaster, { headers: rawHeaders }, 10000);
+  if (rawResp2) {
+    try {
+      const text = await rawResp2.text();
+      const config = JSON.parse(text);
+      localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(config));
+      localStorage.setItem(ADMIN_CACHE_TS_KEY, Date.now().toString());
+      return { config, sha: null, cached: false };
+    } catch(e) {}
+  }
+
+  // All network failed — fall back to local cache
+  const cached = localStorage.getItem(ADMIN_CACHE_KEY);
+  if (cached) {
+    try {
+      const config = JSON.parse(cached);
+      return { config, sha: null, cached: true };
+    } catch(e) {}
+  }
+
+  throw new Error('NETWORK_FAILED');
+}
+
+// ===== Write admin.json to GitHub =====
+async function updateAdminConfig(newConfig, sha) {
+  const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.adminPath}`;
+
+  // If no sha provided (e.g. config was read via raw URL which doesn't return sha),
+  // fetch it via API GET first — GitHub PUT requires sha for updating existing files
+  if (!sha) {
+    try {
+      const getResp = await ghFetch(url, {
+        headers: {
+          'Authorization': `Bearer ${getGhToken()}`,
+          'Accept': 'application/vnd.github+json'
+        }
+      }, 10000);
+      if (getResp.status === 200) {
+        const getData = await getResp.json();
+        sha = getData.sha;
+      }
+    } catch(e) {}
+  }
+
+  const content = utf8ToBase64(JSON.stringify(newConfig, null, 2));
+  const body = {
+    message: `update: admin config - ${new Date().toLocaleString('zh-CN')}`,
+    content: content
+  };
+  if (sha) body.sha = sha;
+
+  let putResp;
+  try {
+    putResp = await ghFetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${getGhToken()}`,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+  } catch(e) {
+    throw new Error('无法连接 GitHub 服务器，请切换网络（如用流量）后重试');
+  }
+
+  if (putResp.status === 200 || putResp.status === 201) {
+    // Update local cache
+    localStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify(newConfig));
+    localStorage.setItem(ADMIN_CACHE_TS_KEY, Date.now().toString());
+    return await putResp.json();
+  }
+
+  // Read GitHub error details for clearer feedback
+  let errDetail = 'HTTP ' + putResp.status;
+  try {
+    const errBody = await putResp.json();
+    if (errBody.message) errDetail += '：' + errBody.message;
+  } catch(e) {}
+  throw new Error(errDetail);
+}
+
+// ===== Alert helper =====
+function showAlert(elementId, message, type) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  el.className = 'alert show ' + type;
+  const icons = { error: '&#9888;&#65039;', success: '&#9989;', info: '&#8505;&#65039;' };
+  el.innerHTML = (icons[type] || '') + ' ' + message;
+}
+
+function hideAlert(elementId) {
+  const el = document.getElementById(elementId);
+  if (el) el.className = 'alert';
+}
+
+// ===== Login =====
+async function handleLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  const btnText = document.getElementById('btn-login-text');
+
+  hideAlert('alert-box');
+
+  if (!hasGhToken()) {
+    showAlert('alert-box', '请先点击「密钥设置」配置 GitHub 密钥', 'error');
+    openTokenModal();
+    return;
+  }
+
+  if (!username || !password) {
+    showAlert('alert-box', '请输入账户名和密码', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> 验证中...';
+
+  try {
+    const result = await fetchAdminConfig();
+    const config = result.config;
+
+    if (username === config.username && password === config.password) {
+      // Login success
+      sessionStorage.setItem(AUTH_KEY, 'logged_in');
+      sessionStorage.setItem(LOGIN_TS_KEY, Date.now().toString());
+      if (result.cached) {
+        showAlert('alert-box', '登录成功（离线模式，使用上次缓存的账号）', 'success');
+      } else {
+        showAlert('alert-box', '登录成功，正在跳转...', 'success');
+      }
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 600);
+    } else {
+      showAlert('alert-box', '账号或密码错误，请重试', 'error');
+      btn.disabled = false;
+      btnText.textContent = '登 录';
+    }
+  } catch(e) {
+    showAlert('alert-box', '网络连接失败，无法读取账号配置。<br>请尝试：1. 切换网络（如用流量）2. 稍后重试 3. 如果之前登录过，清除浏览器数据后重新打开', 'error');
+    btn.disabled = false;
+    btnText.textContent = '登 录';
+  }
+}
+
+// ===== Change Password =====
+async function handleChangePassword() {
+  const oldPwd = document.getElementById('old-pwd').value;
+  const newPwd = document.getElementById('new-pwd').value;
+  const confirmPwd = document.getElementById('confirm-pwd').value;
+  const btn = document.getElementById('btn-change-pwd');
+  const btnText = document.getElementById('btn-change-pwd-text');
+
+  hideAlert('change-pwd-alert');
+
+  if (!oldPwd || !newPwd || !confirmPwd) {
+    showAlert('change-pwd-alert', '请填写所有字段', 'error');
+    return;
+  }
+
+  if (newPwd.length < 4) {
+    showAlert('change-pwd-alert', '新密码至少 4 位', 'error');
+    return;
+  }
+
+  if (newPwd !== confirmPwd) {
+    showAlert('change-pwd-alert', '两次输入的新密码不一致', 'error');
+    return;
+  }
+
+  if (newPwd === oldPwd) {
+    showAlert('change-pwd-alert', '新密码不能与原密码相同', 'error');
+    return;
+  }
+
+  btn.disabled = true;
+  btnText.innerHTML = '<span class="spinner"></span> 修改中...';
+
+  try {
+    const result = await fetchAdminConfig();
+
+    // If using cached config (network down), can't update password on GitHub
+    if (result.cached) {
+      showAlert('change-pwd-alert', '当前为离线模式，无法修改密码。请连接网络后重试', 'error');
+      btn.disabled = false;
+      btnText.textContent = '确认修改';
+      return;
+    }
+
+    // Verify old password
+    if (oldPwd !== result.config.password) {
+      showAlert('change-pwd-alert', '原密码不正确', 'error');
+      btn.disabled = false;
+      btnText.textContent = '确认修改';
+      return;
+    }
+
+    // Update password
+    const newConfig = { ...result.config, password: newPwd };
+    await updateAdminConfig(newConfig, result.sha);
+
+    showAlert('change-pwd-alert', '密码已修改，请重新登录', 'success');
+    btn.disabled = false;
+    btnText.textContent = '确认修改';
+
+    // Clear session and redirect to login
+    sessionStorage.removeItem(AUTH_KEY);
+    sessionStorage.removeItem(LOGIN_TS_KEY);
+
+    setTimeout(() => {
+      closeModal('modal-change-pwd');
+      // Reset form
+      document.getElementById('old-pwd').value = '';
+      document.getElementById('new-pwd').value = '';
+      document.getElementById('confirm-pwd').value = '';
+      hideAlert('change-pwd-alert');
+      // Clear login form
+      document.getElementById('password').value = '';
+      hideAlert('alert-box');
+    }, 1500);
+
+  } catch(e) {
+    const msg = (e && e.message) ? e.message : '未知错误';
+    showAlert('change-pwd-alert', '修改失败：' + msg + '。请切换网络（如用流量）后重试', 'error');
+    btn.disabled = false;
+    btnText.textContent = '确认修改';
+  }
+}
+
+// ===== Modal helpers =====
+function openChangePasswordModal() {
+  document.getElementById('modal-change-pwd').classList.add('show');
+  hideAlert('change-pwd-alert');
+}
+
+function openForgotPasswordModal() {
+  document.getElementById('modal-forgot-pwd').classList.add('show');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// ===== Toggle password visibility =====
+document.getElementById('toggle-pwd').addEventListener('click', function() {
+  const pwd = document.getElementById('password');
+  if (pwd.type === 'password') {
+    pwd.type = 'text';
+    this.innerHTML = '&#128064;';
+  } else {
+    pwd.type = 'password';
+    this.innerHTML = '&#128065;';
+  }
+});
+
+// ===== Enter key to login =====
+document.getElementById('password').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') handleLogin();
+});
+document.getElementById('username').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('password').focus();
+});
+
+// ===== Check if already logged in =====
+(function checkAuth() {
+  if (sessionStorage.getItem(AUTH_KEY) === 'logged_in') {
+    window.location.href = 'index.html';
+  }
+})();
+
+// ===== Token Setup =====
+function openTokenModal() {
+  document.getElementById('modal-token').classList.add('show');
+  document.getElementById('token-input').value = getGhToken();
+  hideAlert('token-alert');
+}
+
+function saveTokenFromInput() {
+  const token = document.getElementById('token-input').value.trim();
+  if (!token) {
+    showAlert('token-alert', '请输入 Token', 'error');
+    return;
+  }
+  if (!token.startsWith('github_pat_') && !token.startsWith('ghp_')) {
+    showAlert('token-alert', 'Token 格式不正确，应以 github_pat_ 或 ghp_ 开头', 'error');
+    return;
+  }
+  setGhToken(token);
+  showAlert('token-alert', '密钥已保存', 'success');
+  setTimeout(() => {
+    closeModal('modal-token');
+    hideAlert('alert-box');
+  }, 800);
+}
+
+// ===== Auto-prompt token setup on first visit =====
+(function checkTokenSetup() {
+  if (!hasGhToken()) {
+    setTimeout(() => openTokenModal(), 500);
+  }
+})();
+
+// ===== Register Service Worker =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+  });
+}
+</script>
+</body>
+</html>
