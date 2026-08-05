@@ -518,10 +518,54 @@ const GH_CONFIG = {
 };
 
 // Token stored in localStorage (NOT hardcoded in source) for security
+// + IndexedDB backup so it survives localStorage cleanup by the browser
 const GH_TOKEN_KEY = 'gh_token';
 function getGhToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
-function setGhToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
+function setGhToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); idbSet('gh_token', t); }
 function hasGhToken() { return !!getGhToken(); }
+
+// ===== IndexedDB key-value backup (more persistent than localStorage) =====
+const IDB_NAME = 'supplier_wb';
+const IDB_STORE = 'kv';
+function idbGet(key) {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) { resolve(null); return; }
+        try {
+          const tx = db.transaction(IDB_STORE, 'readonly');
+          const g = tx.objectStore(IDB_STORE).get(key);
+          g.onsuccess = () => resolve(g.result || null);
+          g.onerror = () => resolve(null);
+        } catch(err) { resolve(null); }
+      };
+      req.onerror = () => resolve(null);
+    } catch(e) { resolve(null); }
+  });
+}
+function idbSet(key, val) {
+  try {
+    const req = indexedDB.open(IDB_NAME, 1);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE);
+    };
+    req.onsuccess = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(IDB_STORE)) return;
+      try {
+        const tx = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(val, key);
+      } catch(err) {}
+    };
+  } catch(e) {}
+}
 
 const AUTH_KEY = 'supplier_auth';
 const LOGIN_TS_KEY = 'supplier_login_ts';
@@ -904,10 +948,23 @@ document.getElementById('username').addEventListener('keydown', function(e) {
   if (e.key === 'Enter') document.getElementById('password').focus();
 });
 
-// ===== Check if already logged in =====
-(function checkAuth() {
-  if (sessionStorage.getItem(AUTH_KEY) === 'logged_in') {
+// ===== On load: restore token from IndexedDB, then check auth =====
+(async function initToken() {
+  // Restore token from IndexedDB backup if localStorage lost it
+  if (!getGhToken()) {
+    const backup = await idbGet('gh_token');
+    if (backup) {
+      localStorage.setItem(GH_TOKEN_KEY, backup);
+    }
+  }
+  // Already logged in + has token → go straight to workbench
+  if (sessionStorage.getItem(AUTH_KEY) === 'logged_in' && getGhToken()) {
     window.location.href = 'index.html';
+    return;
+  }
+  // No token after restore → prompt setup
+  if (!getGhToken()) {
+    setTimeout(() => openTokenModal(), 500);
   }
 })();
 
@@ -936,17 +993,12 @@ function saveTokenFromInput() {
   }, 800);
 }
 
-// ===== Auto-prompt token setup on first visit =====
-(function checkTokenSetup() {
-  if (!hasGhToken()) {
-    setTimeout(() => openTokenModal(), 500);
-  }
-})();
+// ===== Token setup modal is triggered by initToken above =====
 
 // ===== Register Service Worker =====
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function() {
-    navigator.serviceWorker.register('sw.js').catch(function() {});
+    navigator.serviceWorker.register('sw.js?v=20260805').catch(function() {});
   });
 }
 </script>
