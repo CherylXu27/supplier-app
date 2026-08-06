@@ -325,9 +325,9 @@ header .actions {
 
 /* Reverse lookup home */
 .reverse-home { max-width: 620px; margin: 0 auto; padding: 48px 20px 20px; text-align: center; }
-.reverse-search-box { position: relative; margin-bottom: 36px; }
+.reverse-search-box { position: relative; margin-bottom: 36px; display: flex; gap: 8px; }
 .reverse-search-box input {
-  width: 100%; padding: 14px 16px 14px 46px; font-size: 15px;
+  flex: 1; padding: 14px 16px 14px 46px; font-size: 15px;
   border: 2px solid var(--border); border-radius: 12px; outline: none;
   transition: border-color 0.2s; box-sizing: border-box; font-family: inherit;
 }
@@ -336,6 +336,14 @@ header .actions {
   position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
   color: var(--text-muted); pointer-events: none;
 }
+.rs-search-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 20px; font-size: 14px; font-weight: 500;
+  background: var(--primary); color: #fff; border: none;
+  border-radius: 12px; cursor: pointer; white-space: nowrap;
+  transition: opacity 0.2s;
+}
+.rs-search-btn:active { opacity: 0.85; }
 .hot-brands-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; font-weight: 500; }
 .brand-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
 .brand-chip {
@@ -348,9 +356,21 @@ header .actions {
 .brand-chip em { font-style: normal; font-size: 11px; opacity: 0.6; font-weight: 600; }
 .brand-chip:hover em { opacity: 0.9; }
 .reverse-tip { margin-top: 40px; font-size: 12px; color: var(--text-muted); }
+.reverse-group { margin-bottom: 24px; }
+.reverse-group-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--primary-light); border-radius: 10px;
+  cursor: pointer; transition: background 0.2s; margin-bottom: 12px;
+}
+.reverse-group-header:hover { background: var(--primary); }
+.reverse-group-header:hover h3 { color: #fff; }
+.reverse-group-header:hover .reverse-group-count { color: rgba(255,255,255,0.85); }
+.reverse-group-header h3 { font-size: 15px; font-weight: 600; color: var(--primary); margin: 0; }
+.reverse-group-count { font-size: 13px; color: var(--text-secondary); }
 @media (max-width: 768px) {
   .reverse-home { padding: 28px 16px 16px; }
   .reverse-search-box input { font-size: 14px; padding: 12px 14px 12px 42px; }
+  .rs-search-btn { padding: 0 14px; font-size: 13px; }
   .brand-chip { padding: 7px 13px; font-size: 12px; }
 }
 
@@ -1658,6 +1678,30 @@ function syncReverseSearch(val) {
   renderProductLineList();
 }
 
+function handleReverseEnter(e) {
+  if (e.key !== 'Enter') return;
+  e.preventDefault();
+  var query = (document.getElementById('reverse-main-search') || {}).value || '';
+  query = query.toLowerCase().trim();
+  var lines = getAllProductLines();
+  if (query) {
+    lines = lines.filter(l =>
+      l.brand.toLowerCase().includes(query) ||
+      l.lineName.toLowerCase().includes(query) ||
+      l.suppliers.some(s => s.productLine.mainSeries.toLowerCase().includes(query))
+    );
+  }
+  if (lines.length === 0) {
+    alert('没有找到匹配"' + query + '"的产品线');
+    return;
+  }
+  if (lines.length === 1) {
+    selectProductLine(lines[0].key);
+  } else {
+    renderReverseMultiResult(lines, query);
+  }
+}
+
 function searchBrand(brand) {
   var sidebarInput = document.getElementById('search-input');
   if (sidebarInput) sidebarInput.value = brand;
@@ -1744,6 +1788,65 @@ function selectProductLine(key) {
   }
 }
 
+function renderReverseMultiResult(lines, query) {
+  const container = document.getElementById('main-content');
+  let totalSuppliers = 0;
+  const uniqueSupplierIds = new Set();
+
+  const sections = lines.map(l => {
+    const supCards = l.suppliers.map(s => {
+      if (!uniqueSupplierIds.has(s.supplierId)) {
+        uniqueSupplierIds.add(s.supplierId);
+        totalSuppliers++;
+      }
+      const st = STATUS_MAP[s.supplierStatus];
+      const mainContact = s.contacts[0];
+      const contactStr = mainContact
+        ? (mainContact.name + (mainContact.position ? ' / ' + mainContact.position : '') +
+           (mainContact.phone ? '   ' + mainContact.phone : '') +
+           (mainContact.wechat ? '   ' + mainContact.wechat : ''))
+        : '暂无联系人';
+      return `
+        <div class="reverse-supplier-card" onclick="switchToSupplier('${s.supplierId}')">
+          <div class="rs-header">
+            <span class="rs-name">${escHtml(s.supplierName)}</span>
+            <span class="badge ${st.cls}">${st.label}</span>
+          </div>
+          <div class="rs-meta">
+            <span class="tag">${TYPE_MAP[s.supplierType] || s.supplierType}</span>
+            ${s.supplierRegion ? `<span class="tag">${escHtml(s.supplierRegion)}</span>` : ''}
+            <span style="margin-left:6px;font-size:12px">
+              系列：<strong>${escHtml(s.productLine.mainSeries || '未指定')}</strong>
+            </span>
+          </div>
+          <div class="rs-contacts">联系人：${escHtml(contactStr)}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="reverse-group">
+        <div class="reverse-group-header" onclick="selectProductLine('${escAttr(l.key)}')">
+          <h3>${escHtml(l.brand)} / ${escHtml(l.lineName)}</h3>
+          <span class="reverse-group-count">${l.suppliers.length} 个供应商</span>
+        </div>
+        ${supCards}
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="detail-header">
+      <div class="title-group">
+        <h2>搜索"${escHtml(query)}" — 找到 ${lines.length} 条产品线</h2>
+        <div class="subtitle">共 <span style="color:var(--primary);font-weight:600">${uniqueSupplierIds.size}</span> 个供应商</div>
+      </div>
+    </div>
+    ${sections}
+  `;
+  document.getElementById('main-content').scrollTop = 0;
+}
+
 function renderReverseMain(key) {
   const container = document.getElementById('main-content');
 
@@ -1756,7 +1859,12 @@ function renderReverseMain(key) {
           <svg class="rs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input type="text" id="reverse-main-search" placeholder="搜索品牌、产品线、系列..."
                  value="${currentQuery}"
-                 oninput="syncReverseSearch(this.value)" />
+                 oninput="syncReverseSearch(this.value)"
+                 onkeydown="handleReverseEnter(event)" />
+          <button class="rs-search-btn" onclick="handleReverseEnter({key:'Enter',preventDefault:function(){}})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            反查
+          </button>
         </div>
         ${topBrands.length > 0 ? `
           <div class="hot-brands-title">热门品牌</div>
