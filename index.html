@@ -323,6 +323,37 @@ header .actions {
 .empty-state h2 { font-size: 16px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
 .empty-state p { font-size: 13px; max-width: 400px; margin-bottom: 20px; }
 
+/* Reverse lookup home */
+.reverse-home { max-width: 620px; margin: 0 auto; padding: 48px 20px 20px; text-align: center; }
+.reverse-search-box { position: relative; margin-bottom: 36px; }
+.reverse-search-box input {
+  width: 100%; padding: 14px 16px 14px 46px; font-size: 15px;
+  border: 2px solid var(--border); border-radius: 12px; outline: none;
+  transition: border-color 0.2s; box-sizing: border-box; font-family: inherit;
+}
+.reverse-search-box input:focus { border-color: var(--primary); }
+.reverse-search-box .rs-icon {
+  position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); pointer-events: none;
+}
+.hot-brands-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; font-weight: 500; }
+.brand-chips { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+.brand-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 8px 16px; background: var(--primary-light); color: var(--primary);
+  border: 1px solid transparent; border-radius: 20px; font-size: 13px;
+  cursor: pointer; transition: all 0.2s; user-select: none;
+}
+.brand-chip:hover { background: var(--primary); color: #fff; transform: translateY(-1px); }
+.brand-chip em { font-style: normal; font-size: 11px; opacity: 0.6; font-weight: 600; }
+.brand-chip:hover em { opacity: 0.9; }
+.reverse-tip { margin-top: 40px; font-size: 12px; color: var(--text-muted); }
+@media (max-width: 768px) {
+  .reverse-home { padding: 28px 16px 16px; }
+  .reverse-search-box input { font-size: 14px; padding: 12px 14px 12px 42px; }
+  .brand-chip { padding: 7px 13px; font-size: 12px; }
+}
+
 /* Dashboard */
 .dashboard { padding: 0; }
 .dashboard .greeting { margin-bottom: 20px; }
@@ -1596,9 +1627,43 @@ function handleSearch() {
     renderMain();
   } else {
     renderProductLineList();
+    if (!selectedProductKey) {
+      var mainSearch = document.getElementById('reverse-main-search');
+      var sidebarSearch = document.getElementById('search-input');
+      if (mainSearch && sidebarSearch) mainSearch.value = sidebarSearch.value;
+    }
   }
   var el = document.getElementById('search-input');
   if (el) el.focus();
+}
+
+function getTopBrands(limit) {
+  const brandCount = {};
+  appData.suppliers.forEach(s => {
+    (s.productLines || []).forEach(pl => {
+      const brand = (pl.brand || '').trim();
+      if (!brand) return;
+      brandCount[brand] = (brandCount[brand] || 0) + 1;
+    });
+  });
+  return Object.entries(brandCount)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit || 12)
+    .map(e => ({ brand: e[0], count: e[1] }));
+}
+
+function syncReverseSearch(val) {
+  var sidebarInput = document.getElementById('search-input');
+  if (sidebarInput) sidebarInput.value = val;
+  renderProductLineList();
+}
+
+function searchBrand(brand) {
+  var sidebarInput = document.getElementById('search-input');
+  if (sidebarInput) sidebarInput.value = brand;
+  var mainInput = document.getElementById('reverse-main-search');
+  if (mainInput) mainInput.value = brand;
+  renderProductLineList();
 }
 
 function getAllProductLines() {
@@ -1683,12 +1748,23 @@ function renderReverseMain(key) {
   const container = document.getElementById('main-content');
 
   if (!key) {
+    const topBrands = getTopBrands(12);
+    const currentQuery = escAttr(document.getElementById('search-input').value || '');
     container.innerHTML = `
-      <div class="empty-state">
-        <div class="icon">&#x1F50E;</div>
-        <h2>产品线反查</h2>
-        <p>从左侧列表点击一条产品线，即可看到哪些供应商在做该产品线，以及对应的联系人信息。</p>
-        <p style="font-size:12px;color:var(--text-muted)">点击供应商卡片可直接跳转到该供应商的详情页</p>
+      <div class="reverse-home">
+        <div class="reverse-search-box">
+          <svg class="rs-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="reverse-main-search" placeholder="搜索品牌、产品线、系列..."
+                 value="${currentQuery}"
+                 oninput="syncReverseSearch(this.value)" />
+        </div>
+        ${topBrands.length > 0 ? `
+          <div class="hot-brands-title">热门品牌</div>
+          <div class="brand-chips">
+            ${topBrands.map(b => `<span class="brand-chip" onclick="searchBrand('${escAttr(b.brand)}')">${escHtml(b.brand)}<em>${b.count}</em></span>`).join('')}
+          </div>
+        ` : ''}
+        <div class="reverse-tip">从左侧列表或上方搜索选择一条产品线，即可查看哪些供应商在做</div>
       </div>
     `;
     return;
