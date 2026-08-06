@@ -1264,7 +1264,12 @@ function addSampleData() {
       productLines: []
     }
   ];
-  saveData();
+  // CRITICAL: sample data must NOT trigger auto-sync.
+  // If we call saveData() here, it sets hasUnsyncedChanges=true and schedules
+  // githubSync() in 5s, which would push these 3 sample suppliers to the cloud
+  // and overwrite the user's real data. Write localStorage directly instead.
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  hasUnsyncedChanges = false;
 }
 
 function isMobile() {
