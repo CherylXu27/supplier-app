@@ -504,10 +504,76 @@ header .actions {
 }
 .batch-confirm-bar .count { font-size: 12px; color: var(--text-secondary); margin-right: auto; }
 .btn:disabled, .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+
+/* 目标公司醒目横幅（预览阶段随时可改） */
+.batch-target-banner {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  background: #eef2ff; color: #3730a3; font-size: 13px;
+}
+.batch-target-banner .btb-label { font-weight: 700; }
+.batch-target-banner .btb-select,
+.batch-target-banner .btb-new-input {
+  padding: 7px 10px; font-size: 13px; font-family: inherit; min-width: 220px;
+  border: 1px solid #c7d2fe; border-radius: var(--radius-sm); outline: none;
+  background: var(--surface); color: var(--text-primary);
+}
+.batch-target-banner .btb-select { font-weight: 600; }
+.batch-target-banner .btb-select:focus,
+.batch-target-banner .btb-new-input:focus { border-color: var(--primary); }
+.batch-target-banner .btb-note { font-size: 12px; color: #4338ca; width: 100%; line-height: 1.7; }
+.batch-target-banner.is-new { background: #fef3c7; color: #92400e; border-bottom-color: #fde68a; }
+.batch-target-banner.is-new .btb-note { color: #92400e; }
+.batch-target-banner.is-new .btb-select,
+.batch-target-banner.is-new .btb-new-input { border-color: #fde68a; }
+
+/* 产品线上的「新」角标 */
+.badge-new {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 9px;
+  font-size: 10px; font-weight: 700; vertical-align: middle;
+  color: #b91c1c; background: #fee2e2; border: 1px solid #fecaca;
+}
+
+/* 导入结果 / 撤销 */
+.batch-result-brands { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.batch-result-chip {
+  font-size: 12px; padding: 2px 8px; border-radius: 10px;
+  background: var(--surface); border: 1px solid #a7f3d0; color: #065f46;
+}
+.batch-result-chip b { font-weight: 600; }
+.batch-undo-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* 最终确认弹窗 */
+.final-company { font-size: 13px; color: var(--text-secondary); }
+.final-company strong {
+  display: block; font-size: 24px; line-height: 1.35; color: var(--text-primary);
+  margin-top: 4px; word-break: break-word;
+}
+.final-meta { font-size: 13px; color: var(--text-secondary); margin-top: 10px; line-height: 1.8; }
+.final-brand-list {
+  margin-top: 12px; max-height: 220px; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg);
+}
+.final-brand-item {
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  padding: 7px 12px; font-size: 13px; border-bottom: 1px dashed var(--border);
+}
+.final-brand-item:last-child { border-bottom: none; }
+.final-brand-item .en { font-weight: 600; color: var(--text-primary); }
+.final-brand-item .zh { color: var(--text-secondary); }
+.final-brand-item .miss { color: #b45309; font-size: 11px; }
+.final-warn {
+  margin-top: 12px; padding: 12px 14px; border-radius: var(--radius-sm);
+  background: #fef3c7; border: 1px solid #fde68a; color: #92400e; font-size: 12.5px; line-height: 1.85;
+}
+.final-similar { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
 @media (max-width: 768px) {
   .batch-list { max-height: 380px; padding: 8px 12px 12px; }
   .batch-target-row select { min-width: 100%; }
   .batch-textarea { min-height: 150px; }
+  .batch-target-banner .btb-select, .batch-target-banner .btb-new-input { min-width: 100%; }
+  .final-company strong { font-size: 20px; }
 }
 
 /* ===== 品牌词典管理 ===== */
@@ -2791,7 +2857,7 @@ function renderMain() {
     plHtml = supplier.productLines.map(pl => `
       <div class="product-line-card">
         <div class="pl-header">
-          <span class="pl-brand">${escHtml(joinBrandLine({ brand: brandDisplay(pl), lineName: pl.lineName }))}${brandNeedsTranslation(pl) ? ' <span class="badge-trans" title="该品牌只有一种语言，点铅笔可补全另一种">待补译名</span>' : ''}</span>
+          <span class="pl-brand">${escHtml(joinBrandLine({ brand: brandDisplay(pl), lineName: pl.lineName }))}${pl.isNew ? `<span class="badge-new" title="批量导入新增（${escHtml((pl.importedAt || '').slice(0, 10))}），编辑该产品线后角标自动消失">新</span>` : ''}${brandNeedsTranslation(pl) ? ' <span class="badge-trans" title="该品牌只有一种语言，点铅笔可补全另一种">待补译名</span>' : ''}</span>
           <span class="pl-series">${escHtml(pl.mainSeries || '未指定系列')}</span>
           <div style="display:flex;gap:2px">
             <button class="btn-icon" onclick="openProductLineModal('${supplier.id}', '${pl.id}')" title="编辑">&#x270F;</button>
@@ -3734,7 +3800,13 @@ function saveProductLine(supplierId, editId) {
 
   if (editId) {
     const pl = supplier.productLines.find(p => p.id === editId);
-    if (pl) Object.assign(pl, data);
+    if (pl) {
+      Object.assign(pl, data);
+      // 人工过目/改过这条了 → 去掉批量导入留下的「新」角标
+      delete pl.isNew;
+      delete pl.importedAt;
+      delete pl.importBatchId;
+    }
   } else {
     supplier.productLines.push({ ...data, id: generateId(), contacts: [] });
   }
@@ -4361,7 +4433,8 @@ let batchState = {
   parsed: false,
   targetId: '',
   newName: '',
-  done: null
+  done: null,
+  pending: null      // 最终核对窗口里待写入的内容（确认前不落库）
 };
 let supplierModalFromBatch = false;
 
@@ -4375,8 +4448,56 @@ function onBatchRawInput(val) {
   batchState.rawText = val || '';
 }
 
-function onBatchNewNameInput(val) {
+// 两处「新建公司名」输入框互相镜像，改哪一处都一样
+function onBatchNewNameInput(val, src) {
   batchState.newName = val || '';
+  const otherId = src === 'inline' ? 'batch-new-name' : 'batch-new-name-inline';
+  const other = document.getElementById(otherId);
+  if (other && other.value !== batchState.newName) other.value = batchState.newName;
+  if (batchState.parsed && batchState.items.length) updateBatchSummary();
+}
+
+// 当前目标公司的显示名（用于确认条等处的防错提示）
+function batchTargetNameText() {
+  if (batchState.targetId === '__new__') {
+    const n = (batchState.newName || '').trim();
+    return n ? n + '（新建）' : '（未填写新公司名）';
+  }
+  const s = appData.suppliers.find(x => x.id === batchState.targetId);
+  return s ? s.name : '（未选择公司）';
+}
+
+// 目标公司下拉选项（卡片② 与预览横幅共用，保证两处始终一致）
+function batchTargetOptionsHtml() {
+  const suppliers = appData.suppliers.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  return suppliers.map(s =>
+    `<option value="${escAttr(s.id)}" ${s.id === batchState.targetId ? 'selected' : ''}>${escHtml(s.name)}（已有 ${s.productLines.length} 条产品线）</option>`
+  ).join('') + `<option value="__new__" ${batchState.targetId === '__new__' ? 'selected' : ''}>＋ 新建公司…</option>`;
+}
+
+// 公司名规范化：去空格/标点/括号内容后比较，专门用来发现「名字很像」的已有公司
+function normSupplierName(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/[（(][^）)]*[）)]/g, '')
+    .replace(/[\s\-_.,，。、·|/\\'"“”‘’]/g, '');
+}
+
+// 找出与新公司名「很像」的已有公司，避免错挂
+function findSimilarSuppliers(name) {
+  const target = normSupplierName(name);
+  if (!target) return [];
+  const out = [];
+  appData.suppliers.forEach(s => {
+    const n = normSupplierName(s.name);
+    if (!n) return;
+    let reason = '';
+    if (n === target) reason = '同名';
+    else if (n.indexOf(target) >= 0 || target.indexOf(n) >= 0) reason = '包含相同名称';
+    else if (target.length >= 3 && n.length >= 3 && target.slice(0, 3) === n.slice(0, 3)) reason = '开头相同';
+    if (reason) out.push({ id: s.id, name: s.name, reason: reason, lines: (s.productLines || []).length });
+  });
+  return out.slice(0, 5);
 }
 
 function renderBatchSidebar() {
@@ -4405,9 +4526,7 @@ function renderBatchImport() {
   }
   const isNewTarget = batchState.targetId === '__new__';
 
-  const targetOptions = suppliers.map(s =>
-    `<option value="${escAttr(s.id)}" ${s.id === batchState.targetId ? 'selected' : ''}>${escHtml(s.name)}（已有 ${s.productLines.length} 条产品线）</option>`
-  ).join('');
+  const targetOptions = batchTargetOptionsHtml();
 
   container.innerHTML = `
     <div class="batch-wrap">
@@ -4422,9 +4541,25 @@ function renderBatchImport() {
         <div class="detail-card">
           <div class="card-body">
             <div class="batch-done">
-              <span>&#x2705; 已向「${escHtml(batchState.done.supplierName)}」导入 <strong>${batchState.done.added}</strong> 个品牌${batchState.done.skipped ? `，跳过 ${batchState.done.skipped} 个重复品牌` : ''}。</span>
-              <button class="btn btn-sm btn-primary" onclick="switchToSupplier('${escAttr(batchState.done.supplierId)}')">查看该公司</button>
+              <span>&#x2705; 本次向「${escHtml(batchState.done.supplierName)}」导入 <strong>${batchState.done.added}</strong> 条${batchState.done.skipped ? `，跳过 ${batchState.done.skipped} 条已存在` : ''}。</span>
             </div>
+            ${(batchState.done.brands && batchState.done.brands.length) ? `
+              <div class="batch-result-brands">
+                ${batchState.done.brands.map(b => {
+                  const en = String(b.en || '').trim();
+                  const zh = (b.zh || []).filter(Boolean);
+                  const name = en || zh[0] || '';
+                  const tail = (en && zh.length)
+                    ? '（' + escHtml(zh.join('、')) + '）'
+                    : ' <span style="color:#b45309">待补译名</span>';
+                  return `<span class="batch-result-chip"><b>${escHtml(name)}</b>${tail}</span>`;
+                }).join('')}
+              </div>` : ''}
+            <div class="batch-undo-bar">
+              <button class="btn btn-sm btn-primary" onclick="switchToSupplier('${escAttr(batchState.done.supplierId)}')">查看该公司</button>
+              <button class="btn btn-sm btn-danger" onclick="undoBatchImport()">&#x21A9; 撤销本次导入（移除刚加入的 ${batchState.done.added} 条）</button>
+            </div>
+            <div class="batch-hint" style="margin-top:8px">归错公司了？点「撤销」会把这一批从「${escHtml(batchState.done.supplierName)}」名下原样移除，核对清单会一并恢复，直接改选正确公司再导入即可，不用逐条删。</div>
           </div>
         </div>
       ` : ''}
@@ -4534,6 +4669,15 @@ function renderBatchPreview() {
       <h3>&#x2462; 待核对清单</h3>
       <span class="count">共 ${total} 个品牌，${pairedCount} 个已双语配对</span>
     </div>
+    <div class="batch-target-banner ${batchState.targetId === '__new__' ? 'is-new' : ''}">
+      <span class="btb-label">将归入：</span>
+      <select class="btb-select" id="batch-target-inline" onchange="onBatchTargetChange(this.value)">${batchTargetOptionsHtml()}</select>
+      <input type="text" class="btb-new-input" id="batch-new-name-inline" placeholder="填写新公司名称，如：Arrow 艾睿"
+        value="${escAttr(batchState.newName || '')}"
+        oninput="onBatchNewNameInput(this.value, 'inline')"
+        style="${batchState.targetId === '__new__' ? '' : 'display:none'}" />
+      <span class="btb-note">导入前随时可在这里换公司 —— 换完会自动重新核对「已存在」、刷新可勾选条数，不用退回去重来。</span>
+    </div>
     <div class="batch-toolbar">
       <button class="link-btn" onclick="setAllBatchChecked(true)">全选</button>
       <button class="link-btn" onclick="setAllBatchChecked(false)">全不选</button>
@@ -4542,7 +4686,7 @@ function renderBatchPreview() {
     </div>
     <div class="batch-list">${rows}</div>
     <div class="batch-confirm-bar">
-      <span class="count" id="batch-confirm-count">将写入 ${checkedCount} 个品牌</span>
+      <span class="count" id="batch-confirm-count">将写入「${escHtml(batchTargetNameText())}」${checkedCount} 个品牌</span>
       <button class="btn" onclick="clearBatchImport()">取消</button>
       <button class="btn btn-primary" id="batch-confirm-btn" onclick="confirmBatchImport()" ${checkedCount === 0 ? 'disabled' : ''}>&#x2714; 确认导入</button>
     </div>
@@ -4654,7 +4798,7 @@ function updateBatchSummary() {
   const sum = document.getElementById('batch-summary');
   if (sum) sum.textContent = `${checked} / ${total} 已勾选${exists ? `，${exists} 个已存在将被跳过` : ''}`;
   const cnt = document.getElementById('batch-confirm-count');
-  if (cnt) cnt.textContent = `将写入 ${checked} 个品牌`;
+  if (cnt) cnt.textContent = `将写入「${batchTargetNameText()}」${checked} 个品牌`;
   const btn = document.getElementById('batch-confirm-btn');
   if (btn) btn.disabled = checked === 0;
 }
@@ -4869,16 +5013,36 @@ function setAllBatchChecked(flag) {
   renderBatchPreview();
 }
 
-function onBatchTargetChange() {
-  const sel = document.getElementById('batch-target-select');
-  if (!sel) return;
-  batchState.targetId = sel.value;
-  const nameInput = document.getElementById('batch-new-name');
-  if (nameInput) {
-    nameInput.value = '';
-    nameInput.style.display = sel.value === '__new__' ? '' : 'none';
+function onBatchTargetChange(val) {
+  let v = val;
+  if (v === undefined) {
+    const sel = document.getElementById('batch-target-select');
+    v = sel ? sel.value : batchState.targetId;
   }
-  batchState.newName = '';
+  batchState.targetId = v;
+
+  // 离开「新建公司」时清掉临时名称，避免误带到别处
+  if (v !== '__new__') {
+    batchState.newName = '';
+    ['batch-new-name', 'batch-new-name-inline'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+  }
+
+  // 两处下拉互相同步
+  ['batch-target-select', 'batch-target-inline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value !== v) el.value = v;
+  });
+  ['batch-new-name', 'batch-new-name-inline'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = v === '__new__' ? '' : 'none';
+    if (v === '__new__' && el.value !== (batchState.newName || '')) el.value = batchState.newName || '';
+  });
+
+  // 换公司 → 「已存在」判断全部重算（同一批品牌在 A 公司可能有、在 B 公司没有）
   const existsSet = getBatchExistingBrandSet();
   batchState.items.forEach(i => {
     i.exists = !!i.key && existsSet.has(i.key);
@@ -4895,6 +5059,9 @@ function clearBatchImport() {
   renderBatchImport();
 }
 
+/* ---------- 二次核对 → 最终写入 ---------- */
+
+// 第 1 步：点「确认导入」不落库，只做校验并弹出最终核对窗口
 function confirmBatchImport() {
   if (!batchState.parsed) { showToast('请先提取并预览', 'error'); return; }
   if (!batchState.items.length) { showToast('未识别到品牌，无法导入', 'error'); return; }
@@ -4902,19 +5069,153 @@ function confirmBatchImport() {
   const picked = batchState.items.filter(i => i.checked && (i.brandEn || (i.brandZh || []).length || i.raw));
   if (!picked.length) { showToast('请至少勾选一个品牌', 'error'); return; }
 
-  // 1) 确定目标公司
-  let supplier = null;
+  // 1) 目标公司：已有公司 / 新建公司 两条路分开处理
+  let supplier = null, mode = 'existing', newName = '', similar = [];
   if (batchState.targetId === '__new__') {
-    const nameInput = document.getElementById('batch-new-name');
-    const name = ((nameInput ? nameInput.value : batchState.newName) || '').trim();
-    if (!name) { showToast('请填写要归入的公司名称', 'error'); return; }
+    const nameInput = document.getElementById('batch-new-name-inline') || document.getElementById('batch-new-name');
+    const name = (((nameInput ? nameInput.value : '') || batchState.newName) || '').trim();
+    if (!name) {
+      showToast('请先填写要归入的公司名称', 'error');
+      if (nameInput && nameInput.focus) nameInput.focus();
+      return;
+    }
     batchState.newName = name;
+    newName = name;
     supplier = appData.suppliers.find(s => (s.name || '').trim().toLowerCase() === name.toLowerCase()) || null;
+    if (supplier) {
+      mode = 'existing';                 // 名字已存在 → 直接并入已有公司，绝不重复建
+    } else {
+      mode = 'new';
+      similar = findSimilarSuppliers(name);
+    }
+  } else {
+    supplier = appData.suppliers.find(s => s.id === batchState.targetId) || null;
+    if (!supplier) { showToast('未找到目标公司，请重新选择', 'error'); return; }
+  }
+
+  // 2) 按「目标公司现有产品线」实际去重，算清真正会新增几条（写入前给你看的数字必须准）
+  const existing = new Set();
+  if (supplier) (supplier.productLines || []).forEach(pl => { const k = brandEntityKey(pl); if (k) existing.add(k); });
+
+  const toAdd = [];
+  let dupCount = 0;
+  for (const it of picked) {
+    const en = (it.brandEn || '').trim();
+    const zh = (it.brandZh || []).map(x => String(x || '').trim()).filter(Boolean);
+    const name = en || zh[0] || (it.raw || '').trim();
+    if (!name) continue;
+    const key = it.key || brandEntityKey({ brand: name });
+    if (existing.has(key)) { dupCount++; continue; }
+    existing.add(key);
+    toAdd.push({ en: en, zh: zh, name: name, key: key });
+  }
+
+  if (!toAdd.length) {
+    showToast(`勾选的 ${dupCount} 个品牌在「${supplier ? supplier.name : newName}」名下都已存在，无新增`, 'info');
+    return;
+  }
+
+  batchState.pending = {
+    mode: mode,
+    supplierId: supplier ? supplier.id : '',
+    supplierName: supplier ? supplier.name : newName,
+    newName: newName,
+    similar: similar,
+    toAdd: toAdd,
+    dupCount: dupCount
+  };
+  openBatchFinalConfirm();
+}
+
+// 最终核对窗口：大字显示公司名 + 本次品牌清单（双语）
+function openBatchFinalConfirm() {
+  const p = batchState.pending;
+  if (!p) return;
+  const isNew = p.mode === 'new';
+
+  const rows = p.toAdd.map(b => {
+    const en = b.en || '';
+    const zh = b.zh || [];
+    const miss = (!en || !zh.length) ? '<span class="miss">待补译名</span>' : '';
+    return `<div class="final-brand-item">
+      <span class="en">${escHtml(en || zh[0] || '')}</span>
+      ${zh.length ? `<span class="zh">${escHtml(zh.join('、'))}</span>` : ''}
+      ${miss}
+    </div>`;
+  }).join('');
+
+  let warnHtml = '';
+  if (isNew && p.similar.length) {
+    warnHtml = `
+      <div class="final-warn">
+        <strong>&#x26A0;&#xFE0F; 系统里没有「${escHtml(p.newName)}」这家公司</strong>，继续会新建一家。<br>
+        但已有名字相近的公司，先确认不是要归入它们：
+        <div class="final-similar">
+          ${p.similar.map(s => `<button class="btn btn-sm" onclick="switchBatchTargetTo('${escAttr(s.id)}')">改归入「${escHtml(s.name)}」（${s.lines} 条）</button>`).join('')}
+        </div>
+      </div>`;
+  } else if (isNew) {
+    warnHtml = `
+      <div class="final-warn">
+        <strong>&#x26A0;&#xFE0F; 系统里没有「${escHtml(p.newName)}」这家公司</strong>，点最终确认会新建一家（类型默认「代理商」，之后可在该公司页面改）。
+      </div>`;
+  }
+
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:620px">
+        <div class="modal-header">
+          <h3>最后核对一遍</h3>
+          <button class="btn-icon" onclick="closeModal()">&#x2715;</button>
+        </div>
+        <div class="modal-body" style="max-height:64vh;overflow:auto">
+          <div class="final-company">
+            ${isNew ? '即将写入 · 新建公司：' : '即将写入公司：'}
+            <strong>${escHtml(p.supplierName)}</strong>
+          </div>
+          <div class="final-meta">
+            本次写入 <b>${p.toAdd.length}</b> 条品牌${p.dupCount ? `；另有 ${p.dupCount} 条已在名下，自动跳过` : ''}。<br>
+            请核对公司名和下面这份名单，确认无误再落库。
+          </div>
+          <div class="final-brand-list">${rows}</div>
+          ${warnHtml}
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">&#x2190; 返回修改</button>
+          <button class="btn btn-primary" onclick="doBatchImport()">${isNew ? '确认新建并导入 ' + p.toAdd.length + ' 条' : '最终确认，写入 ' + p.toAdd.length + ' 条'}</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 核对时发现公司选错 → 一键改目标，清单原样保留，回到预览
+function switchBatchTargetTo(id) {
+  batchState.pending = null;
+  closeModal();
+  batchState.targetId = id;
+  batchState.newName = '';
+  const existsSet = getBatchExistingBrandSet();
+  batchState.items.forEach(i => {
+    i.exists = !!i.key && existsSet.has(i.key);
+    if (i.exists) i.checked = false;
+  });
+  renderBatchImport();
+  showToast('已切换到该公司，确认清单后请再点「确认导入」', 'info');
+}
+
+// 第 2 步：用户点了「最终确认」才真正落库
+function doBatchImport() {
+  const p = batchState.pending;
+  if (!p) { closeModal(); return; }
+
+  let supplier = null;
+  if (p.mode === 'new') {
+    supplier = appData.suppliers.find(s => (s.name || '').trim().toLowerCase() === p.newName.toLowerCase()) || null;
     if (!supplier) {
       const nowIso = new Date().toISOString();
       supplier = {
         id: generateId(),
-        name: name,
+        name: p.newName,
         type: 'distributor',
         region: '',
         status: 'potential',
@@ -4927,45 +5228,49 @@ function confirmBatchImport() {
       appData.suppliers.push(supplier);
     }
   } else {
-    supplier = appData.suppliers.find(s => s.id === batchState.targetId) || null;
+    supplier = appData.suppliers.find(s => s.id === p.supplierId) || null;
   }
-  if (!supplier) { showToast('未找到目标公司，请重新选择', 'error'); return; }
+  if (!supplier) { closeModal(); showToast('未找到目标公司，请重新选择', 'error'); return; }
 
-  // 2) 去重后批量写入（字段与原手动录入完全一致）
   const now = new Date().toISOString();
-  // 按「品牌实体」去重：英文名 / 中文名 / 别名都算同一个品牌
-  const existing = new Set();
-  (supplier.productLines || []).forEach(pl => {
-    const k = brandEntityKey(pl);
-    if (k) existing.add(k);
-  });
+  const batchId = 'imp_' + Date.now().toString(36);
+
+  // 写入瞬间再按实体去重一遍（预览到确认之间可能刚有人在别处改了数据）
+  const already = new Set();
+  (supplier.productLines || []).forEach(pl => { const k = brandEntityKey(pl); if (k) already.add(k); });
+
+  const ids = [], brands = [];
   let added = 0, skipped = 0;
-  for (const it of picked) {
-    const en = (it.brandEn || '').trim();
-    const zh = (it.brandZh || []).map(x => String(x || '').trim()).filter(Boolean);
-    const name = en || zh[0] || (it.raw || '').trim();
-    if (!name) continue;
-    const key = it.key || brandEntityKey({ brand: name });
-    if (existing.has(key)) { skipped++; continue; }
-    existing.add(key);
+
+  p.toAdd.forEach(b => {
+    const key = b.key || brandEntityKey({ brand: b.name });
+    if (already.has(key)) { skipped++; return; }
+    already.add(key);
+    const plId = generateId();
     supplier.productLines.push({
-      id: generateId(),
-      brand: en || zh[0] || name,     // 兼容老字段
-      brandEn: en,
-      brandZh: zh,
+      id: plId,
+      brand: b.en || b.zh[0] || b.name,     // 兼容老字段
+      brandEn: b.en,
+      brandZh: b.zh.slice(),
       lineName: '',
       mainSeries: '',
       remark: '',
       contacts: [],
-      createdAt: now
+      createdAt: now,
+      isNew: true,                          // 本次批次新增 → 列表里带「新」角标
+      importedAt: now,
+      importBatchId: batchId
     });
-    // 自动同步进词典（静默）：双语补齐配对，单语也先收录
-    syncBrandToDict({ en: en, zh: zh });
+    ids.push(plId);
+    brands.push({ en: b.en, zh: b.zh.slice() });
+    syncBrandToDict({ en: b.en, zh: b.zh });  // 自动同步进词典（静默）
     added++;
-  }
+  });
 
-  if (added === 0) {
-    showToast(`勾选的 ${skipped} 个品牌都已存在，无新增`, 'info');
+  if (!added) {
+    batchState.pending = null;
+    closeModal();
+    showToast(`勾选的 ${skipped} 条都已存在，无新增`, 'info');
     return;
   }
 
@@ -4975,11 +5280,71 @@ function confirmBatchImport() {
   batchState = {
     rawText: '', items: [], parsed: false,
     targetId: supplier.id, newName: '',
-    done: { supplierId: supplier.id, supplierName: supplier.name, added, skipped }
+    done: {
+      batchId: batchId,
+      supplierId: supplier.id,
+      supplierName: supplier.name,
+      added: added,
+      skipped: skipped,
+      ids: ids,
+      brands: brands,
+      // 撤销后要把这张清单原样还给你，所以存一份快照
+      itemsSnapshot: p.toAdd.map((b, i) => ({
+        id: 'bi_' + Date.now().toString(36) + '_undo_' + i,
+        raw: b.name,
+        brandEn: b.en,
+        brandZh: b.zh.slice(),
+        known: true,
+        key: b.key,
+        fill: '',
+        checked: true,
+        exists: false
+      }))
+    }
   };
+  closeModal();
   closeSidebar();
   renderAll();
-  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}`, 'success');
+  showToast(`已向「${supplier.name}」导入 ${added} 条${skipped ? `，跳过 ${skipped} 条重复` : ''}`, 'success');
+}
+
+// 撤销本次导入：只移除这批刚加的产品线，清单恢复，可改选公司重来
+function undoBatchImport() {
+  const d = batchState.done;
+  if (!d) return;
+  const supplier = appData.suppliers.find(s => s.id === d.supplierId);
+  if (!supplier) { showToast('目标公司已不存在，无法撤销', 'error'); return; }
+
+  const msg = '确定撤销吗？将从「' + d.supplierName + '」名下移除本次导入的 ' + d.added + ' 条品牌。\n' +
+              '（品牌词典里已收录的词条不会删除，只撤掉这家公司的品牌归属）';
+  if (!confirm(msg)) return;
+
+  const ids = new Set(d.ids || []);
+  const before = (supplier.productLines || []).length;
+  supplier.productLines = (supplier.productLines || []).filter(pl => !ids.has(pl.id));
+  const removed = before - supplier.productLines.length;
+  supplier.updatedAt = new Date().toISOString();
+  saveData();
+
+  // 清单原样恢复 → 直接改选正确公司就能重新导入
+  const snapshot = (d.itemsSnapshot || []).map((it, i) => ({
+    id: 'bi_' + Date.now().toString(36) + '_' + i,
+    raw: it.raw,
+    brandEn: it.brandEn,
+    brandZh: (it.brandZh || []).slice(),
+    known: true,
+    key: it.key,
+    fill: '',
+    checked: true,
+    exists: false
+  }));
+
+  batchState = {
+    rawText: '', items: snapshot, parsed: snapshot.length > 0,
+    targetId: d.supplierId, newName: '', done: null
+  };
+  renderAll();
+  showToast(removed ? `已撤销 ${removed} 条，清单已恢复，改选公司即可重新导入` : '这批品牌已不在该公司名下', 'success');
 }
 
 /* ===== 品牌词典管理（工作台内可视化维护） =====
