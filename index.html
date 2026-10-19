@@ -234,11 +234,11 @@ header .actions {
   border-radius: var(--radius-sm); overflow: hidden;
 }
 .view-tab {
-  flex: 1; padding: 7px 0; text-align: center; font-size: 13px;
+  flex: 1; padding: 7px 0; text-align: center; font-size: 12px;
   cursor: pointer; background: var(--surface); color: var(--text-secondary);
-  transition: all 0.15s; border: none; font-family: inherit;
+  transition: all 0.15s; border: none; font-family: inherit; white-space: nowrap;
 }
-.view-tab:first-child { border-right: 1px solid var(--border); }
+.view-tab:not(:last-child) { border-right: 1px solid var(--border); }
 .view-tab:hover { background: var(--bg); }
 .view-tab.active { background: var(--primary); color: #fff; }
 
@@ -372,6 +372,84 @@ header .actions {
   .reverse-search-box input { font-size: 14px; padding: 12px 14px 12px 42px; }
   .rs-search-btn { padding: 0 14px; font-size: 13px; }
   .brand-chip { padding: 7px 13px; font-size: 12px; }
+}
+
+/* ===== 批量导入代理品牌 ===== */
+.batch-wrap { max-width: 920px; }
+.batch-textarea {
+  width: 100%; min-height: 180px; padding: 12px 14px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: inherit; resize: vertical; box-sizing: border-box;
+  line-height: 1.7; outline: none; background: var(--surface); color: var(--text-primary);
+}
+.batch-textarea:focus { border-color: var(--primary); }
+.batch-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; line-height: 1.7; }
+.batch-hint code { background: var(--bg); padding: 1px 5px; border-radius: 4px; font-size: 11px; }
+.batch-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.batch-target-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.batch-target-row select, .batch-target-row input {
+  padding: 8px 12px; font-size: 13px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-family: inherit; outline: none; background: var(--surface);
+  color: var(--text-primary);
+}
+.batch-target-row select { min-width: 240px; }
+.batch-target-row input { flex: 1; min-width: 180px; }
+.batch-target-row select:focus, .batch-target-row input:focus { border-color: var(--primary); }
+.batch-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--bg);
+  font-size: 12px; color: var(--text-secondary);
+}
+.batch-toolbar .spacer { flex: 1; }
+.batch-toolbar .link-btn {
+  background: none; border: none; padding: 0; font-size: 12px; font-family: inherit;
+  color: var(--primary); cursor: pointer; text-decoration: underline;
+}
+.batch-list { padding: 8px 16px 12px; max-height: 460px; overflow-y: auto; }
+.batch-row {
+  display: flex; align-items: center; gap: 10px; padding: 5px 8px;
+  border-bottom: 1px dashed var(--border); border-radius: 6px;
+}
+.batch-row:last-child { border-bottom: none; }
+.batch-row:hover { background: var(--bg); }
+.batch-row.unchecked .batch-brand-input { color: var(--text-muted); text-decoration: line-through; }
+.batch-row input[type="checkbox"] {
+  width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; accent-color: var(--primary);
+}
+.batch-brand-input {
+  flex: 1; padding: 6px 10px; font-size: 13px; border: 1px solid transparent;
+  border-radius: 6px; font-family: inherit; outline: none;
+  background: transparent; color: var(--text-primary); min-width: 0;
+}
+.batch-brand-input:hover { border-color: var(--border); }
+.batch-brand-input:focus { border-color: var(--primary); background: var(--surface); }
+.batch-badge-exists {
+  font-size: 11px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a;
+  padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+}
+.batch-badge-exists.hide { display: none; }
+.batch-empty {
+  padding: 32px 16px; text-align: center; font-size: 14px; font-weight: 600; color: var(--danger);
+}
+.batch-empty span {
+  display: block; margin-top: 10px; font-size: 12px; font-weight: 400;
+  color: var(--text-muted); line-height: 1.8;
+}
+.batch-done {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 14px 16px; border-radius: var(--radius-sm);
+  background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; font-size: 13px;
+}
+.batch-confirm-bar {
+  display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap;
+  padding: 12px 16px; border-top: 1px solid var(--border); background: var(--bg);
+}
+.batch-confirm-bar .count { font-size: 12px; color: var(--text-secondary); margin-right: auto; }
+.btn:disabled, .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .batch-list { max-height: 380px; padding: 8px 12px 12px; }
+  .batch-target-row select { min-width: 100%; }
+  .batch-textarea { min-height: 150px; }
 }
 
 /* Dashboard */
@@ -1030,6 +1108,7 @@ header .actions {
       <div class="view-toggle" id="view-toggle">
         <button class="view-tab active" onclick="switchView('supplier')">供应商视角</button>
         <button class="view-tab" onclick="switchView('product')">产品线反查</button>
+        <button class="view-tab" onclick="switchView('batch')">批量导入</button>
       </div>
       <div class="sidebar-toolbar">
         <div class="search-box">
@@ -1487,9 +1566,12 @@ function renderAll() {
   if (currentView === 'supplier') {
     renderSupplierList();
     renderMain();
-  } else {
+  } else if (currentView === 'product') {
     renderProductLineList();
     renderReverseMain(selectedProductKey);
+  } else {
+    renderBatchSidebar();
+    renderBatchImport();
   }
 }
 
@@ -1625,11 +1707,21 @@ function switchView(view) {
   selectedSupplierId = null;
   selectedProductKey = null;
   currentFilter = 'all';
-  document.getElementById('search-input').value = '';
-  document.getElementById('search-input').placeholder = view === 'supplier' ? '搜索供应商...' : '搜索品牌/产品线/系列...';
+  const searchEl = document.getElementById('search-input');
+  searchEl.value = '';
+  if (view === 'supplier') {
+    searchEl.placeholder = '搜索供应商...';
+    searchEl.disabled = false;
+  } else if (view === 'product') {
+    searchEl.placeholder = '搜索品牌/产品线/系列...';
+    searchEl.disabled = false;
+  } else {
+    searchEl.placeholder = '批量导入模式';
+    searchEl.disabled = true;
+  }
   const tabs = document.querySelectorAll('.view-tab');
-  tabs[0].classList.toggle('active', view === 'supplier');
-  tabs[1].classList.toggle('active', view === 'product');
+  const order = ['supplier', 'product', 'batch'];
+  tabs.forEach((t, i) => t.classList.toggle('active', order[i] === view));
   document.getElementById('sidebar-footer').innerHTML = view === 'supplier'
     ? '<button class="btn btn-primary" style="width:100%" onclick="openSupplierModal()">+ 添加供应商</button>'
     : '';
@@ -1642,6 +1734,7 @@ function switchView(view) {
 }
 
 function handleSearch() {
+  if (currentView === 'batch') return;
   if (currentView === 'supplier') {
     renderSupplierList();
     renderMain();
@@ -3296,6 +3389,482 @@ function confirmSmartPaste() {
   closeModal();
   renderAll();
   showToast(`成功添加 ${added} 条产品线`, 'success');
+}
+
+/* ===== 批量导入代理品牌（独立区块，不影响手动录入） ===== */
+let batchState = {
+  rawText: '',
+  items: [],
+  parsed: false,
+  targetId: '',
+  newName: '',
+  done: null
+};
+
+function onBatchRawInput(val) {
+  batchState.rawText = val || '';
+}
+
+function onBatchNewNameInput(val) {
+  batchState.newName = val || '';
+}
+
+function renderBatchSidebar() {
+  const container = document.getElementById('supplier-list');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="empty-section" style="text-align:left;padding:18px 14px;line-height:1.9">
+      <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px">&#x1F4E5; 批量导入模式</div>
+      <div style="font-size:12px;color:var(--text-muted)">在右侧粘贴品牌目录文字，提取后核对清单，确认无误才会写入。</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">与原有「+ 添加产品线」手动录入互不影响。</div>
+    </div>
+  `;
+}
+
+function renderBatchImport() {
+  const container = document.getElementById('main-content');
+  if (!container) return;
+
+  const suppliers = appData.suppliers.slice().sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
+  if (!batchState.targetId) {
+    const arrow = suppliers.find(s => /arrow|艾睿/i.test(s.name));
+    batchState.targetId = arrow ? arrow.id : (suppliers.length ? suppliers[0].id : '__new__');
+  }
+  if (batchState.targetId !== '__new__' && !suppliers.some(s => s.id === batchState.targetId)) {
+    batchState.targetId = suppliers.length ? suppliers[0].id : '__new__';
+  }
+  const isNewTarget = batchState.targetId === '__new__';
+
+  const targetOptions = suppliers.map(s =>
+    `<option value="${escAttr(s.id)}" ${s.id === batchState.targetId ? 'selected' : ''}>${escHtml(s.name)}（已有 ${s.productLines.length} 条产品线）</option>`
+  ).join('');
+
+  container.innerHTML = `
+    <div class="batch-wrap">
+      <div class="detail-header">
+        <div class="title-group">
+          <h2>&#x1F4E5; 批量导入代理品牌</h2>
+          <div class="subtitle">粘贴目录文字 → 自动提取品牌 → 核对清单 → 确认写入</div>
+        </div>
+      </div>
+
+      ${batchState.done ? `
+        <div class="detail-card">
+          <div class="card-body">
+            <div class="batch-done">
+              <span>&#x2705; 已向「${escHtml(batchState.done.supplierName)}」导入 <strong>${batchState.done.added}</strong> 个品牌${batchState.done.skipped ? `，跳过 ${batchState.done.skipped} 个重复品牌` : ''}。</span>
+              <button class="btn btn-sm btn-primary" onclick="switchToSupplier('${escAttr(batchState.done.supplierId)}')">查看该公司</button>
+            </div>
+          </div>
+        </div>
+      ` : ''}
+
+      <div class="detail-card">
+        <div class="card-header">
+          <h3>&#x2460; 粘贴原文</h3>
+        </div>
+        <div class="card-body">
+          <textarea class="batch-textarea" id="batch-raw-input" oninput="onBatchRawInput(this.value)"
+            placeholder="把供应商网页上的品牌目录整段复制粘贴到这里，例如：&#10;A&#10;3M&#10;1,517 Products&#10;ABB&#10;1,041,482 Products&#10;...">${escHtml(batchState.rawText)}</textarea>
+          <div class="batch-hint">
+            会自动去掉：品牌后面的产品数量（如 <code>1,517 Products</code>）、A/B/C 字母分组标题、空行、行首序号和多余符号。英文品牌保持原样，不做翻译改写。
+          </div>
+          <div class="batch-actions">
+            <button class="btn btn-primary" onclick="extractBatchBrands()">&#x1F50D; 提取并预览</button>
+            <button class="btn" onclick="clearBatchImport()">清空</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="card-header">
+          <h3>&#x2461; 归入公司</h3>
+        </div>
+        <div class="card-body">
+          <div class="batch-target-row">
+            <select id="batch-target-select" onchange="onBatchTargetChange()">
+              ${targetOptions}
+              <option value="__new__" ${isNewTarget ? 'selected' : ''}>＋ 新建公司…</option>
+            </select>
+            <input type="text" id="batch-new-name" placeholder="填写公司名称，如：Arrow 艾睿"
+              value="${escAttr(batchState.newName || '')}"
+              oninput="onBatchNewNameInput(this.value)"
+              style="${isNewTarget ? '' : 'display:none'}" />
+          </div>
+          <div class="batch-hint">选择这批品牌要归入的公司。新建公司时若名称与已有公司重名，会直接并入已有公司，不会重复创建。</div>
+        </div>
+      </div>
+
+      <div class="detail-card" id="batch-preview-card" style="display:none"></div>
+    </div>
+  `;
+  renderBatchPreview();
+}
+
+function renderBatchPreview() {
+  const card = document.getElementById('batch-preview-card');
+  if (!card) return;
+
+  if (!batchState.parsed) {
+    card.style.display = 'none';
+    card.innerHTML = '';
+    return;
+  }
+  card.style.display = '';
+
+  if (!batchState.items.length) {
+    card.innerHTML = `
+      <div class="card-header">
+        <h3>&#x2462; 待核对清单</h3>
+        <span class="count">0 个</span>
+      </div>
+      <div class="card-body">
+        <div class="batch-empty">
+          &#x26A0;&#xFE0F; 未识别到品牌
+          <span>
+            这段文字里没有识别出任何品牌名，程序不会凭空编造品牌。<br>
+            请确认粘贴的是品牌目录文字（通常每行一个品牌名），或改用「供应商详情 → + 添加产品线」手动录入。
+          </span>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const total = batchState.items.length;
+  const checkedCount = batchState.items.filter(i => i.checked).length;
+  const existsCount = batchState.items.filter(i => i.exists).length;
+
+  const rows = batchState.items.map(it => `
+    <div class="batch-row ${it.checked ? '' : 'unchecked'}" data-batch-row="${escAttr(it.id)}">
+      <input type="checkbox" ${it.checked ? 'checked' : ''} onchange="toggleBatchItem('${escAttr(it.id)}', this.checked)" />
+      <input type="text" class="batch-brand-input" value="${escAttr(it.brand)}" oninput="editBatchItem('${escAttr(it.id)}', this.value)" />
+      <span class="batch-badge-exists ${it.exists ? '' : 'hide'}">已存在</span>
+      <button class="btn-icon danger" title="删除" onclick="removeBatchItem('${escAttr(it.id)}')">&#x2715;</button>
+    </div>
+  `).join('');
+
+  card.innerHTML = `
+    <div class="card-header">
+      <h3>&#x2462; 待核对清单</h3>
+      <span class="count">共 ${total} 个品牌</span>
+    </div>
+    <div class="batch-toolbar">
+      <button class="link-btn" onclick="setAllBatchChecked(true)">全选</button>
+      <button class="link-btn" onclick="setAllBatchChecked(false)">全不选</button>
+      <span class="spacer"></span>
+      <span id="batch-summary">${checkedCount} / ${total} 已勾选${existsCount ? `，${existsCount} 个已存在将被跳过` : ''}</span>
+    </div>
+    <div class="batch-list">${rows}</div>
+    <div class="batch-confirm-bar">
+      <span class="count" id="batch-confirm-count">将写入 ${checkedCount} 个品牌</span>
+      <button class="btn" onclick="clearBatchImport()">取消</button>
+      <button class="btn btn-primary" id="batch-confirm-btn" onclick="confirmBatchImport()" ${checkedCount === 0 ? 'disabled' : ''}>&#x2714; 确认导入</button>
+    </div>
+  `;
+}
+
+function updateBatchSummary() {
+  const total = batchState.items.length;
+  const checked = batchState.items.filter(i => i.checked).length;
+  const exists = batchState.items.filter(i => i.exists).length;
+  const sum = document.getElementById('batch-summary');
+  if (sum) sum.textContent = `${checked} / ${total} 已勾选${exists ? `，${exists} 个已存在将被跳过` : ''}`;
+  const cnt = document.getElementById('batch-confirm-count');
+  if (cnt) cnt.textContent = `将写入 ${checked} 个品牌`;
+  const btn = document.getElementById('batch-confirm-btn');
+  if (btn) btn.disabled = checked === 0;
+}
+
+/* ---------- 文本解析：目录文字 → 品牌数组 ---------- */
+
+// 判断一整行是否只是"产品数量"（如 1,517 / 1,041,482 Products / Products (1,517)）
+function isCountOnlyLine(s) {
+  const t = (s || '').trim();
+  if (!t) return false;
+  if (/^[\d][\d,，\.\s]*\+?$/.test(t)) return true;
+  if (/^[\(（]?[\d][\d,，\.\s]*\+?\s*(?:products?|items?|skus?|models?|produkte?|produits?|productos?|个产品|款产品|条产品|项产品|产品|型号|系列)[\)）]?$/i.test(t)) return true;
+  if (/^(?:products?|items?|skus?)\s*[\(（]?[\d,，\.]+\+?[\)）]?$/i.test(t)) return true;
+  return false;
+}
+
+// 去掉行尾的产品数量，保留品牌本体（"3M 1,517 Products" → "3M"）
+function stripTrailingProductCount(s) {
+  let t = s;
+  const pats = [
+    /[\s\-–—·\|,，:：]*[\(（]?\s*\d[\d,，\.]*\s*\+?\s*(?:products?|items?|skus?|models?|parts?|manufacturers?|produkte?|produits?|productos?)\s*[\)）]?\s*$/i,
+    /[\s\-–—·\|,，:：]*[\(（]?\s*\d[\d,，\.]*\s*\+?\s*(?:个产品|款产品|条产品|项产品|个品牌|产品|型号|系列|品牌)\s*[\)）]?\s*$/i,
+    /[\s\-–—·\|,，:：]*[\(（]\s*\d[\d,，\.]*\s*\+?\s*[\)）]\s*$/
+  ];
+  for (const p of pats) {
+    if (p.test(t)) t = t.replace(p, '');
+  }
+  return t;
+}
+
+// 主解析函数
+function extractBrandsFromText(text) {
+  if (!text) return [];
+
+  const NOISE = new Set([
+    'manufacturers', 'manufacturer', 'manufacturer directory', 'all manufacturers',
+    'brands', 'brand', 'products', 'product', 'categories', 'category',
+    'filter', 'filters', 'filter by', 'sort', 'sort by', 'sort by name',
+    'showing', 'results', 'result', 'search', 'compare', 'view all', 'see all',
+    'show all', 'show more', 'show less', 'load more', 'learn more', 'read more',
+    'back', 'next', 'previous', 'page', 'pages', 'clear', 'clear all', 'apply', 'reset',
+    'in stock', 'out of stock', 'new', 'popular', 'featured', 'recommended',
+    '厂商', '制造商', '品牌', '品牌列表', '产品', '全部', '全部品牌',
+    '筛选', '排序', '搜索', '加载更多', '查看更多', '上一页', '下一页'
+  ]);
+
+  const lines = String(text).replace(/\r\n?/g, '\n').replace(/\u00a0/g, ' ').split('\n');
+  const out = [];
+  const seen = new Set();
+
+  for (const raw of lines) {
+    let line = raw.trim();
+    if (!line) continue;
+
+    // 1) 字母分组标题：单个字母，或 "A (123)" 这种
+    if (/^[A-Za-z]$/.test(line)) continue;
+    if (/^[A-Za-z]\s*[\(（]?\s*\d{0,4}\s*[\)）]?$/.test(line)) continue;
+
+    // 2) 纯序号行：1. / 2) / （3） / 4、
+    if (/^[\(（]?\d{1,3}[\.\)）、:：]?$/.test(line)) continue;
+
+    // 3) 纯产品数量行
+    if (isCountOnlyLine(line)) continue;
+
+    // 4) 明显是页面控件 / 分页说明的行
+    if (/^(showing|displaying|results?|filter|sort|search|view|see|show|load|compare|page)\b/i.test(line)) continue;
+    if (/\d+\s*[-–]\s*\d+\s+of\s+\d+/i.test(line)) continue;
+
+    // 5) 去掉行首项目符号、序号、勾选符号
+    line = line.replace(/^[\s\u2022\u00b7\u25cf\u25aa\u25a0\u2013\u2014\-\*\#>›»\u2713\u2714\+]+/, '');
+    line = line.replace(/^[\(（]?\d{1,3}[\.\)）、:：]\s+/, '');
+
+    // 6) 去掉行尾产品数量
+    line = stripTrailingProductCount(line);
+
+    // 7) 去掉首尾引号、括号、分隔符、多余符号
+    line = line.replace(/^[“”"'‘’《》「」\[\]]+/, '').replace(/[“”"'‘’《》「」\[\]]+$/, '');
+    line = line.replace(/[\s\u2022\u00b7\-–—\*\#>›»\|,，;；:：\+]+$/, '');
+    line = line.replace(/\s{2,}/g, ' ').trim();
+
+    if (!line) continue;
+    if (isCountOnlyLine(line)) continue;
+    if (line.length > 60) continue;              // 长句是描述文字，不是品牌
+    if (NOISE.has(line.toLowerCase())) continue;
+
+    const low = line.toLowerCase();
+    if (seen.has(low)) continue;                 // 批内去重（保留首次出现的写法）
+    seen.add(low);
+    out.push(line);
+  }
+  return out;
+}
+
+/* ---------- 目标公司与去重 ---------- */
+
+function getBatchTargetSupplier() {
+  if (!batchState.targetId || batchState.targetId === '__new__') {
+    const name = (batchState.newName || '').trim().toLowerCase();
+    if (!name) return null;
+    return appData.suppliers.find(s => (s.name || '').trim().toLowerCase() === name) || null;
+  }
+  return appData.suppliers.find(s => s.id === batchState.targetId) || null;
+}
+
+function getBatchExistingBrandSet() {
+  const set = new Set();
+  const supplier = getBatchTargetSupplier();
+  if (supplier) {
+    (supplier.productLines || []).forEach(pl => {
+      const b = (pl.brand || '').trim().toLowerCase();
+      if (b) set.add(b);
+    });
+  }
+  return set;
+}
+
+/* ---------- 交互 ---------- */
+
+function extractBatchBrands() {
+  const ta = document.getElementById('batch-raw-input');
+  const text = ta ? ta.value : batchState.rawText;
+  batchState.rawText = text || '';
+  batchState.done = null;
+
+  if (!batchState.rawText.trim()) {
+    batchState.items = [];
+    batchState.parsed = true;
+    renderBatchPreview();
+    showToast('请先粘贴要提取的文字', 'error');
+    return;
+  }
+
+  const brands = extractBrandsFromText(batchState.rawText);
+  const existsSet = getBatchExistingBrandSet();
+  batchState.items = brands.map((b, idx) => {
+    const exists = existsSet.has(b.toLowerCase());
+    return {
+      id: 'bi_' + Date.now().toString(36) + '_' + idx,
+      brand: b,
+      checked: !exists,
+      exists
+    };
+  });
+  batchState.parsed = true;
+  renderBatchPreview();
+  updateBatchSummary();
+
+  if (!batchState.items.length) {
+    showToast('未识别到品牌，请检查粘贴内容', 'error');
+  } else {
+    showToast(`识别到 ${batchState.items.length} 个品牌，请核对后确认导入`, 'success');
+    const card = document.getElementById('batch-preview-card');
+    if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
+function toggleBatchItem(id, checked) {
+  const it = batchState.items.find(i => i.id === id);
+  if (!it) return;
+  it.checked = !!checked;
+  const row = document.querySelector(`[data-batch-row="${id}"]`);
+  if (row) row.classList.toggle('unchecked', !it.checked);
+  updateBatchSummary();
+}
+
+function editBatchItem(id, val) {
+  const it = batchState.items.find(i => i.id === id);
+  if (!it) return;
+  it.brand = val;
+  const low = (val || '').trim().toLowerCase();
+  it.exists = !!low && getBatchExistingBrandSet().has(low);
+  const row = document.querySelector(`[data-batch-row="${id}"]`);
+  if (row) {
+    const badge = row.querySelector('.batch-badge-exists');
+    if (badge) badge.classList.toggle('hide', !it.exists);
+  }
+  updateBatchSummary();
+}
+
+function removeBatchItem(id) {
+  batchState.items = batchState.items.filter(i => i.id !== id);
+  renderBatchPreview();
+}
+
+function setAllBatchChecked(flag) {
+  batchState.items.forEach(i => { i.checked = !!flag; });
+  renderBatchPreview();
+}
+
+function onBatchTargetChange() {
+  const sel = document.getElementById('batch-target-select');
+  if (!sel) return;
+  batchState.targetId = sel.value;
+  const nameInput = document.getElementById('batch-new-name');
+  if (nameInput) {
+    nameInput.value = '';
+    nameInput.style.display = sel.value === '__new__' ? '' : 'none';
+  }
+  batchState.newName = '';
+  const existsSet = getBatchExistingBrandSet();
+  batchState.items.forEach(i => {
+    const low = (i.brand || '').trim().toLowerCase();
+    i.exists = !!low && existsSet.has(low);
+    if (i.exists) i.checked = false;             // 已存在的直接取消勾选
+  });
+  renderBatchPreview();
+}
+
+function clearBatchImport() {
+  batchState = {
+    rawText: '', items: [], parsed: false,
+    targetId: batchState.targetId, newName: '', done: null
+  };
+  renderBatchImport();
+}
+
+function confirmBatchImport() {
+  if (!batchState.parsed) { showToast('请先提取并预览', 'error'); return; }
+  if (!batchState.items.length) { showToast('未识别到品牌，无法导入', 'error'); return; }
+
+  const picked = batchState.items.filter(i => i.checked && (i.brand || '').trim());
+  if (!picked.length) { showToast('请至少勾选一个品牌', 'error'); return; }
+
+  // 1) 确定目标公司
+  let supplier = null;
+  if (batchState.targetId === '__new__') {
+    const nameInput = document.getElementById('batch-new-name');
+    const name = ((nameInput ? nameInput.value : batchState.newName) || '').trim();
+    if (!name) { showToast('请填写要归入的公司名称', 'error'); return; }
+    batchState.newName = name;
+    supplier = appData.suppliers.find(s => (s.name || '').trim().toLowerCase() === name.toLowerCase()) || null;
+    if (!supplier) {
+      const nowIso = new Date().toISOString();
+      supplier = {
+        id: generateId(),
+        name: name,
+        type: 'distributor',
+        region: '',
+        status: 'potential',
+        remark: '',
+        contacts: [],
+        productLines: [],
+        createdAt: nowIso,
+        updatedAt: nowIso
+      };
+      appData.suppliers.push(supplier);
+    }
+  } else {
+    supplier = appData.suppliers.find(s => s.id === batchState.targetId) || null;
+  }
+  if (!supplier) { showToast('未找到目标公司，请重新选择', 'error'); return; }
+
+  // 2) 去重后批量写入（字段与原手动录入完全一致）
+  const now = new Date().toISOString();
+  const existing = new Set(
+    (supplier.productLines || [])
+      .map(pl => (pl.brand || '').trim().toLowerCase())
+      .filter(Boolean)
+  );
+  let added = 0, skipped = 0;
+  for (const it of picked) {
+    const brand = (it.brand || '').trim();
+    if (!brand) continue;
+    const low = brand.toLowerCase();
+    if (existing.has(low)) { skipped++; continue; }
+    existing.add(low);
+    supplier.productLines.push({
+      id: generateId(),
+      brand: brand,
+      lineName: '',
+      mainSeries: '',
+      remark: '',
+      contacts: [],
+      createdAt: now
+    });
+    added++;
+  }
+
+  if (added === 0) {
+    showToast(`勾选的 ${skipped} 个品牌都已存在，无新增`, 'info');
+    return;
+  }
+
+  supplier.updatedAt = now;
+  saveData();
+
+  batchState = {
+    rawText: '', items: [], parsed: false,
+    targetId: supplier.id, newName: '',
+    done: { supplierId: supplier.id, supplierName: supplier.name, added, skipped }
+  };
+  closeSidebar();
+  renderAll();
+  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}`, 'success');
 }
 
 /* ===== GitHub Cloud Sync ===== */
