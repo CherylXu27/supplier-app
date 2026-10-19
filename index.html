@@ -1617,34 +1617,174 @@ function brandSearchBlob(pl) {
   return extra.filter(Boolean).join(' ').toLowerCase();
 }
 
-// 把品牌加入本地词库（用户手动补全后调用），返回是否新增
-function learnBrandPair(en, zh, silent) {
-  const enName = String(en || '').trim();
-  const zhList = (Array.isArray(zh) ? zh : [zh]).map(x => String(x || '').trim()).filter(Boolean);
-  if (!enName || !zhList.length) return false;
-  const idx = getBrandIndex();
-  const existing = idx[normBrandName(enName)] || idx[normBrandName(zhList[0])];
-  if (existing && existing.en && (existing.zh || []).length) {
-    // 已认识：仅补充新别名
-    const merged = new Set((existing.zh || []).concat(zhList));
-    if (merged.size === (existing.zh || []).length) return false;
-    if (existing.source === 'user') {
-      existing.zh = Array.from(merged);
-      invalidateBrandIndex();
-      return true;
+/* ---- 品牌词典自动同步 ----
+   任何渠道（手动录入 / 批量导入 / 待补译名）只要品牌成功入库，就自动并入词典：
+   - 按「品牌实体」去重：英文名、中文名、别名任意一种匹配到，都算同一条，只做补充合并
+   - 更正时（传入 prev 表示这是编辑既有记录）用新值整体替换该语言列表，不留旧错误译名
+   - 只有单一语言的品牌也收录，缺的另一语言留空，等以后补全
+   - 全程静默，不弹提示、不打断当前操作；由调用方已有的 saveData() 一并落盘
+*/
+function unionNames() {
+  const out = [], seen = new Set();
+  for (let ai = 0; ai < arguments.length; ai++) {
+    const list = Array.isArray(arguments[ai]) ? arguments[ai] : [arguments[ai]];
+    list.forEach(x => {
+      const s = String(x == null ? '' : x).trim();
+      const k = normBrandName(s);
+      if (!s || !k || seen.has(k)) return;
+      seen.add(k);
+      out.push(s);
+    });
+  }
+  return out;
+}
+
+function sameNameList(a, b) {
+  const x = normalizeNameList(a), y = normalizeNameList(b);
+  if (x.length !== y.length) return false;
+  for (let i = 0; i < x.length; i++) {
+    if (normBrandName(x[i]) !== normBrandName(y[i])) return false;
+  }
+  return true;
+}
+
+// 词条上挂的全部写法（含内置绑定的那套），用于实体匹配
+function brandEntryNames(e) {
+  if (!e) return [];
+  const names = [String(e.en || '').trim()]
+    .concat(normalizeNameList(e.zh), normalizeNameList(e.alias))
+    .filter(Boolean);
+  if (e.builtinKey) {
+    const b = BUILTIN_BRAND_DICT.find(x => normBrandName(x.en) === normBrandName(e.builtinKey));
+    if (b) names.push(b.en, ...(b.zh || []), ...(b.alias || []));
+  }
+  return names;
+}
+
+function findBuiltinBrandByNames(names) {
+  for (const n of (names || [])) {
+    const k = normBrandName(n);
+    if (!k) continue;
+    const b = BUILTIN_BRAND_DICT.find(x =>
+      [x.en].concat(x.zh || [], x.alias || []).some(y => normBrandName(y) === k));
+    if (b) return b;
+  }
+  return null;
+}
+
+// opts = { en, zh: [], alias: [], prev: { en, zh: [], alias: [] } }
+// 返回 true 表示词典有写入/变更
+function syncBrandToDict(opts) {
+  const o = opts || {};
+  const en = String(o.en || '').trim();
+  const zhIn = normalizeNameList(o.zh);
+  const aliasIn = normalizeNameList(o.alias);
+  if (!en && !zhIn.length) return false;          // 完全没填品牌，不动词典
+
+  const prev = o.prev || null;
+  const prevAll = prev
+    ? [String(prev.en || '').trim()].concat(normalizeNameList(prev.zh), normalizeNameList(prev.alias)).filter(Boolean)
+    : [];
+  const isCorrect = prevAll.length > 0;           // 编辑既有记录 → 视为更正
+
+  const dict = getUserBrandDict();
+  const now = new Date().toISOString();
+
+  const idxOf = (name) => {
+    const n = normBrandName(name);
+    if (!n) return -1;
+    for (let i = 0; i < dict.length; i++) {
+      if (brandEntryNames(dict[i]).some(x => normBrandName(x) === n)) return i;
     }
-    // 内置词条被补充别名 → 写入用户词库覆盖
-    getUserBrandDict().push({ en: existing.en, zh: Array.from(merged), updatedAt: new Date().toISOString() });
+    return -1;
+  };
+
+  // 1) 定位目标条目：先按新写法找，找不到再按旧写法找（改名 / 更正译名场景）
+  const firstIdxOf = (names) => {
+    for (const n of (names || [])) { const i = idxOf(n); if (i >= 0) return i; }
+    return -1;
+  };
+  const newIdx = firstIdxOf([en].concat(zhIn, aliasIn));
+  const prevIdx = isCorrect ? firstIdxOf(prevAll) : -1;
+  const target = newIdx >= 0 ? newIdx : prevIdx;
+
+  // 2) 已有条目 → 合并 / 覆盖，绝不新增第二条
+  if (target >= 0) {
+    const keep = dict[target];                      // 对象引用，原地改即可，不需要按下标回写
+    let enName = String(keep.en || '').trim();
+    let zh = normalizeNameList(keep.zh);
+    let alias = normalizeNameList(keep.alias);
+    let builtinKey = keep.builtinKey || '';
+
+    // 历史遗留的同实体重复条目：内容并进目标条目后删除，词典里只留一行
+    // （用「名字集合有交集」做传递闭包，TI / 德州仪器 / Texas Instruments 这类重复都能揪出来）
+    const targetNames = new Set(brandEntryNames(keep).map(x => normBrandName(x)));
+    [en].concat(zhIn, aliasIn).forEach(n => { const k = normBrandName(n); if (k) targetNames.add(k); });
+    const extraIdx = [];
+    dict.forEach((e, i) => {
+      if (i === target) return;
+      if (brandEntryNames(e).some(x => targetNames.has(normBrandName(x)))) extraIdx.push(i);
+    });
+    extraIdx.forEach(i => {
+      const e = dict[i] || {};
+      zh = unionNames(zh, normalizeNameList(e.zh));
+      alias = unionNames(alias, normalizeNameList(e.alias));
+      if (!enName) enName = String(e.en || '').trim();
+      if (!builtinKey) builtinKey = e.builtinKey || '';
+    });
+    // 从后往前删，避免下标错位
+    extraIdx.sort((a, b) => b - a).forEach(i => dict.splice(i, 1));
+
+    if (isCorrect && target === prevIdx) {
+      // 编辑的是同一条记录 → 视为更正：本次填的语言列表整体替换，不留旧错误译名
+      if (en) enName = en;
+      if (zhIn.length) zh = zhIn.slice();
+      if (aliasIn.length) alias = aliasIn.slice();
+    } else {
+      // 新品牌落到已有条目 → 只补充合并，不覆盖既有写法
+      if (en && !enName) enName = en;
+      zh = unionNames(zh, zhIn);
+      alias = unionNames(alias, aliasIn);
+    }
+
+    keep.en = enName;
+    keep.zh = zh;
+    keep.alias = alias;
+    if (builtinKey) keep.builtinKey = builtinKey;
+    keep.updatedAt = now;
     invalidateBrandIndex();
     return true;
   }
-  getUserBrandDict().push({
-    en: enName,
-    zh: zhList,
-    updatedAt: new Date().toISOString()
-  });
+
+  // 3) 用户词库没有，但命中内置词条 → 只在确有新内容时写一条「覆盖」，不产生第二行
+  const builtin = findBuiltinBrandByNames([en].concat(zhIn, aliasIn, isCorrect ? prevAll : []));
+  if (builtin) {
+    const bZh = (builtin.zh || []).slice();
+    const bAlias = (builtin.alias || []).slice();
+    const finalEn = en || builtin.en;
+    const finalZh = (isCorrect && zhIn.length) ? zhIn.slice() : unionNames(bZh, zhIn);
+    const finalAlias = unionNames(bAlias, aliasIn);
+    const unchanged = normBrandName(finalEn) === normBrandName(builtin.en)
+      && sameNameList(finalZh, bZh)
+      && sameNameList(finalAlias, bAlias);
+    if (unchanged) return false;                   // 内置已经完整覆盖，不用重复写
+    dict.push({
+      en: finalEn, zh: finalZh, alias: finalAlias,
+      builtinKey: builtin.en, updatedAt: now
+    });
+    invalidateBrandIndex();
+    return true;
+  }
+
+  // 4) 全新品牌：单语也先收录，另一种语言留空等以后补
+  dict.push({ en: en, zh: zhIn.slice(), alias: aliasIn.slice(), updatedAt: now });
   invalidateBrandIndex();
   return true;
+}
+
+// 兼容旧调用：只有双语齐全时才记入词库的老行为已统一到 syncBrandToDict
+function learnBrandPair(en, zh, silent) {
+  return syncBrandToDict({ en: en, zh: zh });
 }
 
 // 云端数据覆盖本地前，先把本地学到的译名并进去，避免词库丢失
@@ -3329,17 +3469,31 @@ function saveProductLine(supplierId, editId) {
     showToast('至少填写一项内容再保存', 'error'); return;
   }
 
+  // 编辑时先记下原来的品牌写法，供「更正回写词典」判断
+  const editingPl = editId ? supplier.productLines.find(p => p.id === editId) : null;
+  let prevBrand = null;
+  if (editingPl) {
+    prevBrand = {
+      en: String(editingPl.brandEn || '').trim(),
+      zh: normalizeNameList(editingPl.brandZh),
+      alias: []
+    };
+    if (!prevBrand.en && !prevBrand.zh.length && editingPl.brand) {
+      const parts = splitBrandName(editingPl.brand);
+      prevBrand.en = (parts.find(p => !hasCJK(p)) || '').trim();
+      prevBrand.zh = parts.filter(p => hasCJK(p));
+    }
+  }
+
   // 只填了一侧 → 查词典补齐另一侧
-  let learned = false;
   if (enFinal || zhList.length) {
     const r = resolveBrandName(enFinal || zhList[0]);
     if (r.known) {
       if (!enFinal && r.en) enFinal = r.en;
       if (!zhList.length && r.zh.length) zhList = r.zh.slice();
-    } else if (enFinal && zhList.length) {
-      // 词典没有但两种语言都填了 → 学进本地词库
-      learned = learnBrandPair(enFinal, zhList);
     }
+    // 自动同步进词典（静默）：新增品牌、补另一语言、更正译名都在这里完成
+    syncBrandToDict({ en: enFinal, zh: zhList, prev: prevBrand });
   }
 
   const data = {
@@ -3364,7 +3518,7 @@ function saveProductLine(supplierId, editId) {
   closeModal();
   renderAll();
   const base = editId ? '产品线已更新' : '产品线已添加';
-  showToast(learned ? base + '，「' + (enFinal || zhList[0]) + '」已记入本地词库' : base, 'success');
+  showToast(base, 'success');
 }
 
 function deleteProductLine(supplierId, plId) {
@@ -3962,6 +4116,8 @@ function confirmSmartPaste() {
       contacts: [],
       createdAt: now
     });
+    // 自动同步进词典（静默）
+    syncBrandToDict({ en: rf.en, zh: rf.zh });
     added++;
   }
 
@@ -4557,7 +4713,7 @@ function confirmBatchImport() {
     const k = brandEntityKey(pl);
     if (k) existing.add(k);
   });
-  let added = 0, skipped = 0, learned = 0;
+  let added = 0, skipped = 0;
   for (const it of picked) {
     const en = (it.brandEn || '').trim();
     const zh = (it.brandZh || []).map(x => String(x || '').trim()).filter(Boolean);
@@ -4577,8 +4733,8 @@ function confirmBatchImport() {
       contacts: [],
       createdAt: now
     });
-    // 双语齐全但词典里没有 → 顺手记进本地词库，下次自动配对
-    if (en && zh.length && learnBrandPair(en, zh)) learned++;
+    // 自动同步进词典（静默）：双语补齐配对，单语也先收录
+    syncBrandToDict({ en: en, zh: zh });
     added++;
   }
 
@@ -4597,7 +4753,7 @@ function confirmBatchImport() {
   };
   closeSidebar();
   renderAll();
-  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}${learned ? `，${learned} 个新品牌已记入词库` : ''}`, 'success');
+  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}`, 'success');
 }
 
 /* ===== 品牌词典管理（工作台内可视化维护） =====
@@ -4691,6 +4847,9 @@ function renderBrandDictSidebar() {
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
         词典随数据一起同步到云端，换设备也在。
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
+        手动录入、批量导入、补译名保存的品牌都会自动同步进这里，不用再单独加一遍。
       </div>
     </div>
   `;
@@ -4943,7 +5102,7 @@ function exportBrandDict() {
   showToast('词典已导出', 'success');
 }
 
-/* ---- 待补译名：扫描已录入产品线里词典没有的品牌 ---- */
+/* ---- 待补译名：扫已录入产品线里词典没有的品牌 + 词典里只填了单一语言的词条 ---- */
 function scanDictPending() {
   const map = new Map();
   appData.suppliers.forEach(s => {
@@ -4960,10 +5119,20 @@ function scanDictPending() {
       map.get(key).count++;
     });
   });
+  // 自动同步进来的单语词条也要能在这里补齐另一种语言（内置词条不算，属系统预置）
+  getBrandDictRows().forEach(r => {
+    if (r.source === 'builtin') return;
+    const en = String(r.en || '').trim();
+    const zh = (r.zh || []).slice();
+    if (en && zh.length) return;                 // 双语齐全，不用补
+    const key = normBrandName(en || zh[0] || '');
+    if (!key) return;
+    if (!map.has(key)) map.set(key, { key, en: en, zh: zh, count: 0 });
+  });
   dictPending = Array.from(map.values()).sort((a, b) => b.count - a.count);
   renderDictPendingCard();
   showToast(dictPending.length
-    ? `发现 ${dictPending.length} 个词典未收录的品牌`
+    ? `发现 ${dictPending.length} 个品牌待补译名`
     : '已录入的品牌都能配对，没有待补项', dictPending.length ? 'info' : 'success');
 }
 
@@ -4976,7 +5145,7 @@ function renderDictPendingCard() {
       <div class="card-header"><h3>&#x2462; 待补译名</h3></div>
       <div class="card-body">
         <div class="batch-hint" style="margin-top:0">
-          扫一遍已经录入的产品线，把词典里还没有的品牌挑出来。补上另一种语言后写进词典，以后录入同一品牌（写英文或中文都行）自动配对。
+          扫一遍已录入的产品线和词典本身，把还没配上双语（只有中文或只有英文）的品牌挑出来。补上另一种语言后写进词典，以后录入同一品牌（写英文或中文都行）自动配对。
         </div>
         <div class="batch-actions">
           <button class="btn btn-primary" onclick="scanDictPending()">&#x1F50D; 扫描已录入品牌</button>
@@ -5005,7 +5174,7 @@ function renderDictPendingCard() {
     const shown = p.en || p.zh.join('、');
     return `
       <div class="pending-trans-row">
-        <span class="pending-trans-name">${escHtml(shown)}<span class="dict-hit">${p.count} 条</span></span>
+        <span class="pending-trans-name">${escHtml(shown)}${p.count ? `<span class="dict-hit">${p.count} 条</span>` : ''}</span>
         <input type="text" id="dict-fill-${i}"
           placeholder="${needZh ? '填写中文名，多个用、分隔' : '填写英文名'}" />
       </div>`;
