@@ -428,6 +428,40 @@ header .actions {
   padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0;
 }
 .batch-badge-exists.hide { display: none; }
+/* 品牌双语配对相关 */
+.batch-pair {
+  font-size: 12px; color: var(--text-secondary); white-space: nowrap;
+  flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis;
+}
+.batch-badge-pending {
+  font-size: 11px; color: #b91c1c; background: #fee2e2; border: 1px solid #fecaca;
+  padding: 2px 7px; border-radius: 10px; white-space: nowrap; flex-shrink: 0;
+}
+.badge-trans {
+  font-size: 10px; font-weight: 500; color: #b45309; background: #fef3c7;
+  border: 1px solid #fde68a; padding: 1px 6px; border-radius: 9px;
+  margin-left: 6px; vertical-align: middle; white-space: nowrap;
+}
+.brand-pair-hint {
+  display: block; margin-top: 6px; font-size: 11px; line-height: 1.7; color: var(--text-muted);
+}
+.brand-pair-hint.ok { color: #047857; }
+.brand-pair-hint.warn { color: #b45309; }
+.pending-trans-list { margin-top: 10px; }
+.pending-trans-row {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0;
+  border-bottom: 1px dashed var(--border);
+}
+.pending-trans-row:last-child { border-bottom: none; }
+.pending-trans-name {
+  min-width: 150px; font-size: 13px; font-weight: 600; color: var(--text-primary);
+}
+.pending-trans-row input {
+  flex: 1; padding: 7px 11px; font-size: 13px; border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-family: inherit; outline: none;
+  background: var(--surface); color: var(--text-primary); min-width: 0;
+}
+.pending-trans-row input:focus { border-color: var(--primary); }
 .batch-empty {
   padding: 32px 16px; text-align: center; font-size: 14px; font-weight: 600; color: var(--danger);
 }
@@ -450,6 +484,51 @@ header .actions {
   .batch-list { max-height: 380px; padding: 8px 12px 12px; }
   .batch-target-row select { min-width: 100%; }
   .batch-textarea { min-height: 150px; }
+}
+
+/* ===== 品牌词典管理 ===== */
+.dict-wrap { max-width: 1000px; }
+.dict-toolbar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 12px 16px; border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.dict-toolbar .spacer { flex: 1; }
+.dict-search {
+  flex: 1; min-width: 200px; padding: 8px 12px; font-size: 13px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: inherit; outline: none; background: var(--surface); color: var(--text-primary);
+}
+.dict-search:focus { border-color: var(--primary); }
+.dict-filters { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 16px 4px; }
+.dict-head, .dict-row {
+  display: grid; grid-template-columns: 1.5fr 1.3fr 1.5fr 82px 76px;
+  gap: 10px; align-items: center; padding: 8px 16px;
+}
+.dict-head {
+  font-size: 11px; font-weight: 600; color: var(--text-muted);
+  border-bottom: 1px solid var(--border); background: var(--bg);
+  position: sticky; top: 0; z-index: 2;
+}
+.dict-row { border-bottom: 1px dashed var(--border); font-size: 13px; }
+.dict-row:last-child { border-bottom: none; }
+.dict-row:hover { background: var(--bg); }
+.dict-en { font-weight: 600; color: var(--text-primary); word-break: break-word; }
+.dict-zh { color: var(--text-primary); word-break: break-word; }
+.dict-alias { color: var(--text-muted); font-size: 12px; word-break: break-word; }
+.dict-miss { color: #b45309; font-size: 11px; background: #fef3c7; border: 1px solid #fde68a; padding: 1px 6px; border-radius: 9px; }
+.dict-hit { font-size: 11px; color: var(--text-muted); margin-left: 6px; }
+.dict-badge {
+  display: inline-block; font-size: 10px; padding: 1px 7px; border-radius: 9px;
+  border: 1px solid var(--border); color: var(--text-secondary); white-space: nowrap;
+}
+.dict-badge.user { color: #0369a1; background: #e0f2fe; border-color: #bae6fd; }
+.dict-badge.over { color: #b45309; background: #fef3c7; border-color: #fde68a; }
+.dict-actions { display: flex; gap: 2px; justify-content: flex-end; }
+.dict-empty { padding: 40px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
+@media (max-width: 768px) {
+  .dict-head, .dict-row { grid-template-columns: 1.3fr 1fr 70px 60px; padding: 8px 12px; gap: 8px; }
+  .dict-head span:nth-child(3), .dict-row > :nth-child(3) { display: none; }
+  .dict-search { min-width: 140px; }
 }
 
 /* Dashboard */
@@ -1109,6 +1188,7 @@ header .actions {
         <button class="view-tab active" onclick="switchView('supplier')">供应商视角</button>
         <button class="view-tab" onclick="switchView('product')">产品线反查</button>
         <button class="view-tab" onclick="switchView('batch')">批量导入</button>
+        <button class="view-tab" onclick="switchView('brand')">品牌词典</button>
       </div>
       <div class="sidebar-toolbar">
         <div class="search-box">
@@ -1211,6 +1291,392 @@ let selectedSupplierId = null;
 let currentFilter = 'all';
 let currentView = 'supplier';
 let selectedProductKey = null;
+let brandKeyFilter = null;   // 热门品牌点击后按品牌实体键筛选
+
+/* ===== 品牌词典：英中对照 + 实体去重 =====
+   规则：
+   1. 内置常见电子元器件品牌对照表（BUILTIN_BRAND_DICT），别名/缩写都作为索引键
+   2. 用户手动补全的译名存进 appData.brandDict（随数据一起同步到云端），优先级高于内置表
+   3. 表里查不到的绝不猜测，标记 known:false 交给「待补译名」清单
+   4. 同一品牌的中英文写法、别名都映射到同一个实体键，用于去重
+*/
+const BUILTIN_BRAND_DICT = [
+  { en: 'Texas Instruments', zh: ['德州仪器'], alias: ['TI', 'TXN', '德仪'] },
+  { en: 'QUALCOMM', zh: ['高通'], alias: ['Qualcomm', '高通骁龙'] },
+  { en: 'NVIDIA', zh: ['英伟达'], alias: ['Nvidia', '黄仁勋'] },
+  { en: 'STMicroelectronics', zh: ['意法半导体'], alias: ['ST', 'STMicro', '意法'] },
+  { en: 'NXP', zh: ['恩智浦'], alias: ['NXP Semiconductors', '恩智浦半导体'] },
+  { en: 'Infineon', zh: ['英飞凌'], alias: ['Infineon Technologies'] },
+  { en: 'onsemi', zh: ['安森美'], alias: ['ON Semiconductor', 'ON半導體', '安森美半导体'] },
+  { en: 'Microchip Technology', zh: ['微芯科技'], alias: ['Microchip', '微芯'] },
+  { en: 'Analog Devices', zh: ['亚德诺'], alias: ['ADI', '亚德诺半导体'] },
+  { en: 'Maxim Integrated', zh: ['美信'], alias: ['Maxim', '美信集成'] },
+  { en: 'Intel', zh: ['英特尔'], alias: ['英特尔公司'] },
+  { en: 'AMD', zh: ['超威半导体'], alias: ['Advanced Micro Devices', '超微半导体'] },
+  { en: 'Samsung', zh: ['三星'], alias: ['Samsung Electronics', '三星电子'] },
+  { en: 'SK Hynix', zh: ['海力士'], alias: ['Hynix', 'SK海力士'] },
+  { en: 'Micron', zh: ['美光'], alias: ['Micron Technology', '美光科技'] },
+  { en: 'Toshiba', zh: ['东芝'], alias: ['Toshiba Electronic'] },
+  { en: 'Renesas', zh: ['瑞萨'], alias: ['Renesas Electronics', '瑞萨电子'] },
+  { en: 'ROHM', zh: ['罗姆'], alias: ['Rohm Semiconductor', '罗姆半导体'] },
+  { en: 'Murata', zh: ['村田'], alias: ['Murata Manufacturing', '村田制作所'] },
+  { en: 'TDK', zh: ['东电化'], alias: ['TDK Corporation', '东京电气化学'] },
+  { en: 'Taiyo Yuden', zh: ['太阳诱电'], alias: ['太诱'] },
+  { en: 'Yageo', zh: ['国巨'], alias: ['Yageo Corporation'] },
+  { en: 'KEMET', zh: ['基美'], alias: ['Kemet Electronics', '基美电子'] },
+  { en: 'Vishay', zh: ['威世'], alias: ['Vishay Intertechnology', '威世科技'] },
+  { en: 'Panasonic', zh: ['松下'], alias: ['Panasonic Industry', '松下电器'] },
+  { en: 'Nichicon', zh: ['尼吉康'], alias: ['Nichicon Corporation'] },
+  { en: 'Rubycon', zh: ['红宝石'], alias: ['Rubycon Corporation'] },
+  { en: 'Nippon Chemi-Con', zh: ['日本化工'], alias: ['NCC', 'Chemi-Con'] },
+  { en: 'Bourns', zh: ['伯恩斯'], alias: ['Bourns Inc'] },
+  { en: 'Littelfuse', zh: ['力特'], alias: ['Littelfuse Inc', '力特保险丝'] },
+  { en: 'TE Connectivity', zh: ['泰科电子'], alias: ['TE', 'Tyco', '泰科'] },
+  { en: 'Molex', zh: ['莫仕'], alias: ['Molex Incorporated'] },
+  { en: 'Amphenol', zh: ['安费诺'], alias: ['Amphenol Corporation'] },
+  { en: 'JST', zh: ['日本压着端子'], alias: ['JST Mfg', '压着端子'] },
+  { en: 'Hirose', zh: ['广濑'], alias: ['Hirose Electric', '广濑电机'] },
+  { en: 'OMRON', zh: ['欧姆龙'], alias: ['Omron', '欧姆龙电子'] },
+  { en: 'Phoenix Contact', zh: ['菲尼克斯'], alias: ['菲尼克斯电气'] },
+  { en: 'WAGO', zh: ['万可'], alias: ['Wago'] },
+  { en: 'Weidmuller', zh: ['魏德米勒'], alias: ['Weidmüller'] },
+  { en: 'Schneider Electric', zh: ['施耐德电气'], alias: ['Schneider', '施耐德'] },
+  { en: 'Siemens', zh: ['西门子'], alias: ['Siemens AG'] },
+  { en: 'ABB', zh: [], alias: ['Asea Brown Boveri'] },
+  { en: 'Fujitsu', zh: ['富士通'], alias: ['Fujitsu Component'] },
+  { en: 'Sony', zh: ['索尼'], alias: ['Sony Semiconductor', '索尼半导体'] },
+  { en: 'Alps Alpine', zh: ['阿尔卑斯'], alias: ['Alps', '阿尔卑斯电气'] },
+  { en: 'Diodes Incorporated', zh: ['达尔科技'], alias: ['Diodes', '达尔'] },
+  { en: 'Fairchild', zh: ['仙童'], alias: ['Fairchild Semiconductor', '仙童半导体'] },
+  { en: 'International Rectifier', zh: ['国际整流器'], alias: ['IR', 'IRF'] },
+  { en: 'Nexperia', zh: ['安世半导体'], alias: ['安世'] },
+  { en: 'Lattice', zh: ['莱迪思'], alias: ['Lattice Semiconductor', '莱迪思半导体'] },
+  { en: 'Xilinx', zh: ['赛灵思'], alias: ['Xilinx Inc'] },
+  { en: 'Altera', zh: ['阿尔特拉'], alias: ['Altera Corporation'] },
+  { en: 'Marvell', zh: ['美满'], alias: ['Marvell Technology', '美满电子'] },
+  { en: 'Broadcom', zh: ['博通'], alias: ['Broadcom Inc', '安华高', 'Avago'] },
+  { en: 'MediaTek', zh: ['联发科'], alias: ['MTK', '联发科技'] },
+  { en: 'Realtek', zh: ['瑞昱'], alias: ['瑞昱半导体'] },
+  { en: 'Novatek', zh: ['联咏'], alias: ['联咏科技'] },
+  { en: 'Himax', zh: ['奇景光电'], alias: ['Himax Technologies'] },
+  { en: 'Silan', zh: ['士兰微'], alias: ['杭州士兰', '士兰微电子'] },
+  { en: 'SG Micro', zh: ['圣邦微'], alias: ['圣邦', '圣邦微电子'] },
+  { en: 'Will Semiconductor', zh: ['韦尔股份'], alias: ['韦尔半导体'] },
+  { en: 'OmniVision', zh: ['豪威'], alias: ['豪威科技', 'OV'] },
+  { en: 'GigaDevice', zh: ['兆易创新'], alias: ['GD', '兆易'] },
+  { en: 'Espressif', zh: ['乐鑫'], alias: ['乐鑫科技', 'Espressif Systems'] },
+  { en: 'Beken', zh: ['博通集成'], alias: ['Beken Corporation'] },
+  { en: 'Rockchip', zh: ['瑞芯微'], alias: ['瑞芯微电子'] },
+  { en: 'Allwinner', zh: ['全志'], alias: ['全志科技', 'Allwinner Technology'] },
+  { en: 'Fudan Microelectronics', zh: ['复旦微电'], alias: ['复旦微', '上海复旦微电子'] },
+  { en: 'Montage Technology', zh: ['澜起科技'], alias: ['Montage', '澜起'] },
+  { en: 'Silergy', zh: ['矽力杰'], alias: ['Silergy Corp'] },
+  { en: 'JCET', zh: ['长电科技'], alias: ['江苏长电', '长电'] },
+  { en: 'Tianshui Huatian', zh: ['华天科技'], alias: ['华天'] },
+  { en: 'NAURA', zh: ['北方华创'], alias: ['北方华创科技'] },
+  { en: 'SMIC', zh: ['中芯国际'], alias: ['中芯'] },
+  { en: 'Hua Hong', zh: ['华虹'], alias: ['华虹半导体', 'HHGrace'] },
+  { en: 'Yangjie', zh: ['扬杰科技'], alias: ['扬杰'] },
+  { en: 'CR Micro', zh: ['华润微'], alias: ['华润微电子'] },
+  { en: 'BYD', zh: ['比亚迪'], alias: ['比亚迪半导体', 'BYD Semiconductor'] },
+  { en: 'CATL', zh: ['宁德时代'], alias: ['宁德时代新能源'] },
+  { en: 'Luxshare', zh: ['立讯精密'], alias: ['Luxshare Precision'] },
+  { en: 'Sunlord', zh: ['顺络电子'], alias: ['顺络'] },
+  { en: 'Chilisin', zh: ['奇力新'], alias: ['Chilisin Electronics'] },
+  { en: 'Delta Electronics', zh: ['台达'], alias: ['Delta', '台达电子'] },
+  { en: 'Mean Well', zh: ['明纬'], alias: ['MEAN WELL', '明纬电源'] },
+  { en: 'Lite-On', zh: ['光宝'], alias: ['LiteOn', '光宝科技'] },
+  { en: 'Everlight', zh: ['亿光'], alias: ['亿光电子'] },
+  { en: 'OSRAM', zh: ['欧司朗'], alias: ['Osram', 'ams OSRAM'] },
+  { en: 'Cree', zh: ['科锐'], alias: ['Wolfspeed', 'Cree LED'] },
+  { en: 'Lumileds', zh: ['亮锐'], alias: ['Lumileds Lighting'] },
+  { en: 'ams', zh: ['艾迈斯'], alias: ['AMS', '艾迈斯半导体'] },
+  { en: 'Bosch', zh: ['博世'], alias: ['Bosch Sensortec', '博世传感'] },
+  { en: 'Sensata', zh: ['森萨塔'], alias: ['Sensata Technologies'] },
+  { en: 'Honeywell', zh: ['霍尼韦尔'], alias: ['Honeywell International'] },
+  { en: 'Melexis', zh: ['迈来芯'], alias: ['Melexis NV'] },
+  { en: 'Kyocera', zh: ['京瓷'], alias: ['Kyocera Corporation'] },
+  { en: 'Epson', zh: ['爱普生'], alias: ['Seiko Epson', '精工爱普生'] },
+  { en: 'Citizen', zh: ['西铁城'], alias: ['Citizen Electronics', '西铁城电子'] },
+  { en: '3M', zh: [], alias: ['3M Company'] }
+];
+
+// 归一化：小写、去掉空格与常见分隔符，用于实体比较和查表
+function normBrandName(s) {
+  return String(s == null ? '' : s)
+    .toLowerCase()
+    .replace(/[\s\u3000\-_\.\,\/\\'"+&@#·•:：;；!！\?？]/g, '')
+    .replace(/[（）()【】\[\]]/g, '')
+    .trim();
+}
+
+// 用户本地词库（随 appData 一起存盘/同步）
+function getUserBrandDict() {
+  if (!Array.isArray(appData.brandDict)) appData.brandDict = [];
+  return appData.brandDict;
+}
+
+let _brandIndexCache = null;
+
+function invalidateBrandIndex() { _brandIndexCache = null; }
+
+function getBrandIndex() {
+  if (_brandIndexCache) return _brandIndexCache;
+  const idx = Object.create(null);
+  const put = (names, entry) => {
+    (names || []).forEach(n => {
+      const k = normBrandName(n);
+      if (k && !idx[k]) idx[k] = entry;
+    });
+  };
+  // 先内置，再用户词库（用户词库覆盖内置，支持自己纠正译名）
+  BUILTIN_BRAND_DICT.forEach(e => {
+    put([e.en].concat(e.zh || [], e.alias || []), {
+      en: e.en, zh: (e.zh || []).slice(), alias: (e.alias || []).slice(), source: 'builtin'
+    });
+  });
+  const userIdx = Object.create(null);
+  getUserBrandDict().forEach(e => {
+    if (!e) return;
+    const entry = {
+      en: (e.en || '').trim(),
+      zh: (Array.isArray(e.zh) ? e.zh : (e.zh ? [e.zh] : [])).map(x => String(x || '').trim()).filter(Boolean),
+      alias: (e.alias || []).map(x => String(x || '').trim()).filter(Boolean),
+      source: 'user'
+    };
+    if (!entry.en && !entry.zh.length) return;
+    const names = [entry.en].concat(entry.zh, entry.alias);
+    // 覆盖内置词条时，把内置的那套写法也一并指向用户词条，避免同一品牌出现两个实体
+    if (e.builtinKey) {
+      const b = BUILTIN_BRAND_DICT.find(x => normBrandName(x.en) === normBrandName(e.builtinKey));
+      if (b) names.push(b.en, ...(b.zh || []), ...(b.alias || []));
+    }
+    names.forEach(n => {
+      const k = normBrandName(n);
+      if (k) userIdx[k] = entry;
+    });
+  });
+  Object.keys(userIdx).forEach(k => { idx[k] = userIdx[k]; });
+  _brandIndexCache = idx;
+  return idx;
+}
+
+// 拆出「TI (德州仪器)」「TI/德州仪器」这类混合写法中的多个名字
+function splitBrandName(s) {
+  const raw = String(s == null ? '' : s).trim();
+  if (!raw) return [];
+  const out = [];
+  const m = raw.match(/^(.+?)\s*[（(]\s*([^）)]+?)\s*[）)]\s*$/);
+  if (m) {
+    out.push(m[1].trim(), m[2].trim());
+  }
+  if (!out.length) {
+    raw.split(/\s*[\/|｜、,，;；]\s*/).forEach(p => { if (p && p.trim()) out.push(p.trim()); });
+  }
+  if (!out.length) out.push(raw);
+  return out.filter(Boolean);
+}
+
+function hasCJK(s) { return /[\u3400-\u9fff]/.test(String(s || '')); }
+
+// 查表：任意写法 → { en, zh[], known, key }
+function resolveBrandName(raw) {
+  const name = String(raw == null ? '' : raw).trim();
+  if (!name) return { en: '', zh: [], known: false, key: '' };
+  const idx = getBrandIndex();
+
+  // 整体先查（"3M"、"NXP" 这类只有一个词的直接命中）
+  let hit = idx[normBrandName(name)];
+  if (!hit) {
+    const parts = splitBrandName(name);
+    for (const p of parts) {
+      const h = idx[normBrandName(p)];
+      if (h) { hit = h; break; }
+    }
+  }
+  if (hit) {
+    return {
+      en: hit.en || '',
+      zh: (hit.zh || []).slice(),
+      known: true,
+      key: normBrandName(hit.en || (hit.zh || [])[0] || name)
+    };
+  }
+
+  // 未命中：按语言归位，绝不翻译
+  const parts = splitBrandName(name);
+  const lat = parts.filter(p => !hasCJK(p));
+  const cjk = parts.filter(p => hasCJK(p));
+  return {
+    en: (lat[0] || '').trim(),
+    zh: cjk.slice(),
+    known: false,
+    key: normBrandName(lat[0] || cjk[0] || name)
+  };
+}
+
+// 产品线对象 → 双语字段（老数据只有 brand，则在显示时按词典临时补齐，不回写数据）
+function brandFieldsOf(pl) {
+  const obj = pl || {};
+  let en = String(obj.brandEn || '').trim();
+  let zh = Array.isArray(obj.brandZh)
+    ? obj.brandZh.map(x => String(x || '').trim()).filter(Boolean)
+    : (obj.brandZh ? [String(obj.brandZh).trim()].filter(Boolean) : []);
+
+  if (!en && !zh.length) {
+    const legacy = String(obj.brand || '').trim();
+    if (legacy) {
+      const r = resolveBrandName(legacy);
+      if (r.known) {
+        en = r.en;
+        zh = r.zh.slice();
+      } else {
+        const parts = splitBrandName(legacy);
+        const lat = parts.filter(p => !hasCJK(p));
+        const cjk = parts.filter(p => hasCJK(p));
+        en = lat[0] || '';
+        zh = cjk;
+      }
+    }
+  }
+
+  // 只填了一种语言时，用词典补上另一半（仅用于显示，不回写数据）
+  if (en && !zh.length) {
+    const r = resolveBrandName(en);
+    if (r.known && r.zh.length) zh = r.zh.slice();
+  } else if (!en && zh.length) {
+    const r = resolveBrandName(zh[0]);
+    if (r.known && r.en) en = r.en;
+  }
+  return { en, zh };
+}
+
+// 展示：英文（中文、别名）；只有一种语言就只显示这一种，不留空括号
+function brandDisplay(pl) {
+  const f = brandFieldsOf(pl);
+  if (f.en && f.zh.length) return f.en + '（' + f.zh.join('、') + '）';
+  if (f.en) return f.en;
+  if (f.zh.length) return f.zh.join('、');
+  return '';
+}
+
+// 「品牌 / 产品线」，缺哪个就不显示多余的分隔符
+function joinBrandLine(o) {
+  const b = ((o && o.brand) || '').trim();
+  const l = ((o && o.lineName) || '').trim();
+  if (b && l) return b + ' / ' + l;
+  if (b) return b;
+  if (l) return l;
+  return '未填写';
+}
+
+// 是否需要补译名：词典里完全查不到这个品牌时才算（查得到的会自动配对，不算待补）
+function brandNeedsTranslation(pl) {
+  const obj = pl || {};
+  const en = String(obj.brandEn || '').trim();
+  const zh = Array.isArray(obj.brandZh)
+    ? obj.brandZh.map(x => String(x || '').trim()).filter(Boolean)
+    : (obj.brandZh ? [String(obj.brandZh).trim()].filter(Boolean) : []);
+  const name = en || zh[0] || String(obj.brand || '').trim();
+  if (!name) return false;                 // 没填品牌，不算待补
+  return !resolveBrandName(name).known;    // 词典查不到 → 待补
+}
+
+// 实体键：英文、中文、别名都归到同一个键，用于去重和分组
+function brandEntityKey(pl) {
+  const obj = (typeof pl === 'string') ? { brand: pl } : (pl || {});
+  const idx = getBrandIndex();
+  const cands = [];
+  if (obj.brandEn) cands.push(obj.brandEn);
+  if (Array.isArray(obj.brandZh)) obj.brandZh.forEach(x => cands.push(x));
+  else if (obj.brandZh) cands.push(obj.brandZh);
+  if (obj.brand) cands.push(obj.brand);
+
+  for (const c of cands) {
+    for (const p of splitBrandName(c)) {
+      const h = idx[normBrandName(p)];
+      if (h) return normBrandName(h.en || (h.zh || [])[0] || p);
+    }
+  }
+  const f = brandFieldsOf(obj);
+  const first = f.en || f.zh[0] || cands.find(c => String(c || '').trim()) || '';
+  return normBrandName(first);
+}
+
+// 搜索用的全名文本（含词典补充的另一种语言）
+function brandSearchBlob(pl) {
+  const f = brandFieldsOf(pl);
+  const extra = [];
+  const idx = getBrandIndex();
+  [f.en].concat(f.zh, [pl && pl.brand]).forEach(n => {
+    if (!n) return;
+    extra.push(n);
+    const h = idx[normBrandName(n)];
+    if (h) extra.push(h.en, (h.zh || []).join(' '), (h.alias || []).join(' '));
+  });
+  return extra.filter(Boolean).join(' ').toLowerCase();
+}
+
+// 把品牌加入本地词库（用户手动补全后调用），返回是否新增
+function learnBrandPair(en, zh, silent) {
+  const enName = String(en || '').trim();
+  const zhList = (Array.isArray(zh) ? zh : [zh]).map(x => String(x || '').trim()).filter(Boolean);
+  if (!enName || !zhList.length) return false;
+  const idx = getBrandIndex();
+  const existing = idx[normBrandName(enName)] || idx[normBrandName(zhList[0])];
+  if (existing && existing.en && (existing.zh || []).length) {
+    // 已认识：仅补充新别名
+    const merged = new Set((existing.zh || []).concat(zhList));
+    if (merged.size === (existing.zh || []).length) return false;
+    if (existing.source === 'user') {
+      existing.zh = Array.from(merged);
+      invalidateBrandIndex();
+      return true;
+    }
+    // 内置词条被补充别名 → 写入用户词库覆盖
+    getUserBrandDict().push({ en: existing.en, zh: Array.from(merged), updatedAt: new Date().toISOString() });
+    invalidateBrandIndex();
+    return true;
+  }
+  getUserBrandDict().push({
+    en: enName,
+    zh: zhList,
+    updatedAt: new Date().toISOString()
+  });
+  invalidateBrandIndex();
+  return true;
+}
+
+// 云端数据覆盖本地前，先把本地学到的译名并进去，避免词库丢失
+function mergeBrandDictBeforeOverwrite(incoming) {
+  const local = Array.isArray(appData && appData.brandDict) ? appData.brandDict : [];
+  const target = (incoming && typeof incoming === 'object') ? incoming : { suppliers: [] };
+  if (!Array.isArray(target.brandDict)) target.brandDict = [];
+  if (!local.length) return target;
+  const seen = new Set(target.brandDict.map(e => normBrandName((e && e.en) || ((e && e.zh) || [])[0] || '')));
+  local.forEach(e => {
+    if (!e) return;
+    const k = normBrandName(e.en || (Array.isArray(e.zh) ? e.zh[0] : (e.zh || '')) || '');
+    if (k && !seen.has(k)) { target.brandDict.push(e); seen.add(k); }
+  });
+  return target;
+}
+
+// 加载/导入数据后补齐结构
+function ensureAppDataShape() {  if (!appData || typeof appData !== 'object') appData = { version: '1.0', suppliers: [] };
+  if (!Array.isArray(appData.suppliers)) appData.suppliers = [];
+  if (!Array.isArray(appData.brandDict)) appData.brandDict = [];
+  appData.suppliers.forEach(s => {
+    if (!Array.isArray(s.productLines)) s.productLines = [];
+    if (!Array.isArray(s.contacts)) s.contacts = [];
+    s.productLines.forEach(pl => {
+      if (!pl || typeof pl !== 'object') return;
+      if (pl.brandZh && !Array.isArray(pl.brandZh)) pl.brandZh = [pl.brandZh];
+    });
+  });
+  invalidateBrandIndex();
+}
+
 
 const AGENT_NEWS = [
   {
@@ -1353,6 +1819,7 @@ function loadData() {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.suppliers && Array.isArray(parsed.suppliers)) {
         appData = parsed;
+        ensureAppDataShape();
         return true;
       }
     } catch(e) {}
@@ -1495,6 +1962,7 @@ function init() {
   if (!loadData()) {
     addSampleData();
   }
+  ensureAppDataShape();
   autoConfigGithub();
   renderAll();
   if (isMobile()) updateBottomNav();
@@ -1532,7 +2000,8 @@ function autoPullFromCloud() {
       });
       // Auto-pull if cloud has more data, or cloud is newer, or local is empty
       if (cloudCount > localCount || (localCount === 0 && cloudCount > 0) || (cloudDate > localLatest && cloudCount !== localCount)) {
-        appData = cloudData;
+        appData = mergeBrandDictBeforeOverwrite(cloudData);
+        ensureAppDataShape();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
         hasUnsyncedChanges = false;
         selectedSupplierId = null;
@@ -1569,6 +2038,9 @@ function renderAll() {
   } else if (currentView === 'product') {
     renderProductLineList();
     renderReverseMain(selectedProductKey);
+  } else if (currentView === 'brand') {
+    renderBrandDictSidebar();
+    renderBrandDictView();
   } else {
     renderBatchSidebar();
     renderBatchImport();
@@ -1640,7 +2112,7 @@ function getFilteredSuppliers() {
       s.name.toLowerCase().includes(query) ||
       s.region.toLowerCase().includes(query) ||
       s.productLines.some(pl =>
-        pl.brand.toLowerCase().includes(query) ||
+        brandSearchBlob(pl).includes(query) ||
         pl.lineName.toLowerCase().includes(query) ||
         pl.mainSeries.toLowerCase().includes(query)
       ) ||
@@ -1715,16 +2187,22 @@ function switchView(view) {
   } else if (view === 'product') {
     searchEl.placeholder = '搜索品牌/产品线/系列...';
     searchEl.disabled = false;
+  } else if (view === 'brand') {
+    searchEl.placeholder = '搜索品牌词条...';
+    searchEl.disabled = false;
   } else {
     searchEl.placeholder = '批量导入模式';
     searchEl.disabled = true;
   }
   const tabs = document.querySelectorAll('.view-tab');
-  const order = ['supplier', 'product', 'batch'];
+  const order = ['supplier', 'product', 'batch', 'brand'];
   tabs.forEach((t, i) => t.classList.toggle('active', order[i] === view));
   document.getElementById('sidebar-footer').innerHTML = view === 'supplier'
     ? '<button class="btn btn-primary" style="width:100%" onclick="openSupplierModal()">+ 添加供应商</button>'
-    : '';
+    : (view === 'brand'
+      ? '<button class="btn btn-primary" style="width:100%" onclick="openBrandDictModal(\'\')">+ 新增品牌词条</button>'
+      : '');
+  if (view === 'brand') { dictQuery = ''; dictFilter = 'all'; }
   renderAll();
   if (isMobile()) {
     closeSidebar();
@@ -1735,9 +2213,16 @@ function switchView(view) {
 
 function handleSearch() {
   if (currentView === 'batch') return;
+  brandKeyFilter = null;
   if (currentView === 'supplier') {
     renderSupplierList();
     renderMain();
+  } else if (currentView === 'brand') {
+    const val = document.getElementById('search-input').value || '';
+    dictQuery = val;
+    const box = document.getElementById('dict-search');
+    if (box) box.value = val;
+    renderDictRows();
   } else {
     renderProductLineList();
     if (!selectedProductKey) {
@@ -1751,21 +2236,33 @@ function handleSearch() {
 }
 
 function getTopBrands(limit) {
-  const brandCount = {};
+  const brandCount = {};   // 实体键 → { count, display, terms:Set }
   appData.suppliers.forEach(s => {
     (s.productLines || []).forEach(pl => {
-      const brand = (pl.brand || '').trim();
-      if (!brand) return;
-      brandCount[brand] = (brandCount[brand] || 0) + 1;
+      const key = brandEntityKey(pl);
+      if (!key) return;
+      const disp = brandDisplay(pl);
+      if (!disp) return;
+      if (!brandCount[key]) brandCount[key] = { count: 0, display: disp, terms: new Set() };
+      brandCount[key].count++;
+      brandCount[key].terms.add(pl.brand || '');
+      // 优先用带中文的写法作为展示
+      if (!brandCount[key].display.includes('（')) brandCount[key].display = disp;
     });
   });
   return Object.entries(brandCount)
-    .sort((a, b) => b[1] - a[1])
+    .sort((a, b) => b[1].count - a[1].count)
     .slice(0, limit || 12)
-    .map(e => ({ brand: e[0], count: e[1] }));
+    .map(e => ({
+      brand: e[1].display,
+      key: e[0],
+      count: e[1].count,
+      terms: Array.from(e[1].terms)
+    }));
 }
 
 function syncReverseSearch(val) {
+  brandKeyFilter = null;
   var sidebarInput = document.getElementById('search-input');
   if (sidebarInput) sidebarInput.value = val;
   renderProductLineList();
@@ -1780,6 +2277,7 @@ function handleReverseEnter(e) {
   if (query) {
     lines = lines.filter(l =>
       l.brand.toLowerCase().includes(query) ||
+      (l.brandSearch || '').includes(query) ||
       l.lineName.toLowerCase().includes(query) ||
       l.suppliers.some(s => s.productLine.mainSeries.toLowerCase().includes(query))
     );
@@ -1795,7 +2293,8 @@ function handleReverseEnter(e) {
   }
 }
 
-function searchBrand(brand) {
+function searchBrand(brand, key) {
+  brandKeyFilter = key || brandEntityKey({ brand: brand });
   var sidebarInput = document.getElementById('search-input');
   if (sidebarInput) sidebarInput.value = brand;
   var mainInput = document.getElementById('reverse-main-search');
@@ -1807,18 +2306,24 @@ function getAllProductLines() {
   const map = {};
   appData.suppliers.forEach(s => {
     s.productLines.forEach(pl => {
-      const bName = pl.brand || '未填写';
+      // 品牌按「实体」归并：英文名、中文名、别名统一成同一个键
+      const eKey = brandEntityKey(pl);
+      const disp = brandDisplay(pl);
+      const bName = disp || '未填写';
       const lName = pl.lineName || '未填写';
-      const key = (bName + '|||' + lName).toLowerCase();
+      const key = (eKey || normBrandName(bName)) + '|||' + lName.toLowerCase();
       if (!map[key]) {
         map[key] = {
-          brand: pl.brand || '',
+          brand: disp || '',
+          brandKey: eKey,
+          brandSearch: '',
           lineName: pl.lineName || '',
           key: key,
           displayKey: bName + ' / ' + lName,
           suppliers: []
         };
       }
+      map[key].brandSearch += ' ' + brandSearchBlob(pl);
       map[key].suppliers.push({
         supplierId: s.id,
         supplierName: s.name,
@@ -1841,9 +2346,14 @@ function renderProductLineList() {
   if (query) {
     lines = lines.filter(l =>
       l.brand.toLowerCase().includes(query) ||
+      (l.brandSearch || '').includes(query) ||
       l.lineName.toLowerCase().includes(query) ||
       l.suppliers.some(s => s.productLine.mainSeries.toLowerCase().includes(query))
     );
+  }
+
+  if (brandKeyFilter) {
+    lines = lines.filter(l => l.brandKey === brandKeyFilter);
   }
 
   lines.sort((a, b) => a.displayKey.localeCompare(b.displayKey, 'zh-CN'));
@@ -1860,7 +2370,7 @@ function renderProductLineList() {
     return `
       <div class="supplier-item ${selected}" onclick="selectProductLine('${escAttr(l.key)}')">
         <div class="info">
-          <div class="name">${escHtml(l.brand)} / ${escHtml(l.lineName)}</div>
+          <div class="name">${escHtml(joinBrandLine(l))}</div>
           <div class="meta">
             <span style="color:var(--primary)">${supCount} 个供应商在做</span>
           </div>
@@ -1920,7 +2430,7 @@ function renderReverseMultiResult(lines, query) {
     return `
       <div class="reverse-group">
         <div class="reverse-group-header" onclick="selectProductLine('${escAttr(l.key)}')">
-          <h3>${escHtml(l.brand)} / ${escHtml(l.lineName)}</h3>
+          <h3>${escHtml(joinBrandLine(l))}</h3>
           <span class="reverse-group-count">${l.suppliers.length} 个供应商</span>
         </div>
         ${supCards}
@@ -1962,7 +2472,7 @@ function renderReverseMain(key) {
         ${topBrands.length > 0 ? `
           <div class="hot-brands-title">热门品牌</div>
           <div class="brand-chips">
-            ${topBrands.map(b => `<span class="brand-chip" onclick="searchBrand('${escAttr(b.brand)}')">${escHtml(b.brand)}<em>${b.count}</em></span>`).join('')}
+            ${topBrands.map(b => `<span class="brand-chip" onclick="searchBrand('${escAttr(b.brand)}', '${escAttr(b.key)}')">${escHtml(b.brand)}<em>${b.count}</em></span>`).join('')}
           </div>
         ` : ''}
         <div class="reverse-tip">从左侧列表或上方搜索选择一条产品线，即可查看哪些供应商在做</div>
@@ -2015,7 +2525,7 @@ function renderReverseMain(key) {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><polyline points="15 18 9 12 15 6"/></svg>
           返回列表
         </button>
-        <h2>${escHtml(matched.brand || '未填写品牌')} / ${escHtml(matched.lineName || '未填写产品线')}</h2>
+        <h2>${escHtml(joinBrandLine(matched))}</h2>
         <div class="subtitle">
           共 <span style="color:var(--primary);font-weight:600">${matched.suppliers.length}</span> 个供应商在做此产品线
         </div>
@@ -2091,7 +2601,7 @@ function renderMain() {
     plHtml = supplier.productLines.map(pl => `
       <div class="product-line-card">
         <div class="pl-header">
-          <span class="pl-brand">${escHtml(pl.brand || '未填写品牌')}${pl.lineName ? ' / ' + escHtml(pl.lineName) : (pl.brand ? '' : ' / 未填写产品线')}</span>
+          <span class="pl-brand">${escHtml(joinBrandLine({ brand: brandDisplay(pl), lineName: pl.lineName }))}${brandNeedsTranslation(pl) ? ' <span class="badge-trans" title="该品牌只有一种语言，点铅笔可补全另一种">待补译名</span>' : ''}</span>
           <span class="pl-series">${escHtml(pl.mainSeries || '未指定系列')}</span>
           <div style="display:flex;gap:2px">
             <button class="btn-icon" onclick="openProductLineModal('${supplier.id}', '${pl.id}')" title="编辑">&#x270F;</button>
@@ -2571,13 +3081,19 @@ function saveSupplier(editId) {
       supplier.updatedAt = now;
     }
   } else {
-    appData.suppliers.push({
+    const newSupplier = {
       id: generateId(), name, type, region, status, remark,
       contacts: [], productLines: [],
       createdAt: now, updatedAt: now
-    });
+    };
+    appData.suppliers.push(newSupplier);
+    if (supplierModalFromBatch) {
+      batchState.targetId = newSupplier.id;
+      batchState.newName = '';
+    }
   }
 
+  supplierModalFromBatch = false;
   saveData();
   closeModal();
   renderAll();
@@ -2721,6 +3237,7 @@ function openProductLineModal(supplierId, editId) {
   if (!supplier) return;
   const pl = editId ? supplier.productLines.find(p => p.id === editId) : null;
   const title = pl ? '编辑产品线' : '添加产品线';
+  const bf = pl ? brandFieldsOf(pl) : { en: '', zh: [] };
 
   const modal = document.getElementById('modal-container');
   modal.innerHTML = `
@@ -2732,8 +3249,13 @@ function openProductLineModal(supplierId, editId) {
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label>品牌名称 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（选填，后续可补充）</span></label>
-            <input type="text" id="m-pl-brand" value="${escAttr(pl?.brand || '')}" placeholder="如：TI、村田、华为">
+            <label>品牌英文名 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（选填，可与中文名只填一个）</span></label>
+            <input type="text" id="m-pl-brand-en" value="${escAttr(bf.en)}" placeholder="如：Texas Instruments、TI" onchange="syncBrandFields('en')">
+          </div>
+          <div class="form-group">
+            <label>品牌中文名 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（可填多个别名，用 / 或 、 分隔）</span></label>
+            <input type="text" id="m-pl-brand-zh" value="${escAttr(bf.zh.join(' / '))}" placeholder="如：德州仪器" onchange="syncBrandFields('zh')">
+            <span class="brand-pair-hint" id="m-pl-brand-hint">&#x1F4A1; 填好后另一语言会自动从词典补齐；词典没收录的不会乱翻译，会提示你手动补，保存后记入本地词库。</span>
           </div>
           <div class="form-group">
             <label>产品线名称 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（选填，后续可补充）</span></label>
@@ -2758,21 +3280,75 @@ function openProductLineModal(supplierId, editId) {
   `;
 }
 
+// 弹窗里填一侧，自动用词典补齐另一侧（只补空的那侧，不覆盖已填内容）
+function syncBrandFields(from) {
+  const enEl = document.getElementById('m-pl-brand-en');
+  const zhEl = document.getElementById('m-pl-brand-zh');
+  const hint = document.getElementById('m-pl-brand-hint');
+  if (!enEl || !zhEl) return;
+
+  const en = enEl.value.trim();
+  const zhRaw = zhEl.value.trim();
+  if (!en && !zhRaw) {
+    if (hint) { hint.className = 'brand-pair-hint'; hint.textContent = '\u{1F4A1} 填好后另一语言会自动从词典补齐；词典没收录的不会乱翻译，会提示你手动补，保存后记入本地词库。'; }
+    return;
+  }
+
+  const src = from === 'zh' ? (zhRaw.split(/[\/|｜、,，;；]+/)[0] || '') : en;
+  const r = resolveBrandName(src);
+  if (r.known) {
+    if (!en && r.en) enEl.value = r.en;
+    if (!zhRaw && r.zh.length) zhEl.value = r.zh.join(' / ');
+    if (hint) {
+      hint.className = 'brand-pair-hint ok';
+      hint.textContent = '\u2705 词典已配对：' + (r.en || r.zh[0] || '') + (r.zh.length ? '（' + r.zh.join('、') + '）' : '') + '，如需调整可直接修改';
+    }
+  } else {
+    if (hint) {
+      hint.className = 'brand-pair-hint warn';
+      hint.textContent = '\u26A0 词典未收录该品牌，不会自动翻译。手动补齐另一种语言后保存，会自动记入你的本地词库，下次同一品牌无论写中英文都能自动配对。';
+    }
+  }
+}
+
 function saveProductLine(supplierId, editId) {
   const supplier = appData.suppliers.find(s => s.id === supplierId);
   if (!supplier) return;
 
-  const brand = document.getElementById('m-pl-brand').value.trim();
+  const enEl = document.getElementById('m-pl-brand-en');
+  const zhEl = document.getElementById('m-pl-brand-zh');
+  const enInput = enEl ? enEl.value.trim() : '';
+  const zhRaw = zhEl ? zhEl.value.trim() : '';
+  let zhList = zhRaw.split(/[\/|｜、,，;；]+/).map(s => s.trim()).filter(Boolean);
+  let enFinal = enInput;
+
   const lineName = document.getElementById('m-pl-name').value.trim();
-  if (!brand && !lineName && !document.getElementById('m-pl-series').value.trim() && !document.getElementById('m-pl-remark').value.trim()) {
+  const series = document.getElementById('m-pl-series').value.trim();
+  const remark = document.getElementById('m-pl-remark').value.trim();
+  if (!enInput && !zhList.length && !lineName && !series && !remark) {
     showToast('至少填写一项内容再保存', 'error'); return;
   }
 
+  // 只填了一侧 → 查词典补齐另一侧
+  let learned = false;
+  if (enFinal || zhList.length) {
+    const r = resolveBrandName(enFinal || zhList[0]);
+    if (r.known) {
+      if (!enFinal && r.en) enFinal = r.en;
+      if (!zhList.length && r.zh.length) zhList = r.zh.slice();
+    } else if (enFinal && zhList.length) {
+      // 词典没有但两种语言都填了 → 学进本地词库
+      learned = learnBrandPair(enFinal, zhList);
+    }
+  }
+
   const data = {
-    brand,
+    brand: enFinal || zhList[0] || '',   // 兼容老字段：规范主名优先英文
+    brandEn: enFinal,
+    brandZh: zhList,
     lineName,
-    mainSeries: document.getElementById('m-pl-series').value.trim(),
-    remark: document.getElementById('m-pl-remark').value.trim(),
+    mainSeries: series,
+    remark,
     createdAt: new Date().toISOString()
   };
 
@@ -2787,7 +3363,8 @@ function saveProductLine(supplierId, editId) {
   saveData();
   closeModal();
   renderAll();
-  showToast(editId ? '产品线已更新' : '产品线已添加', 'success');
+  const base = editId ? '产品线已更新' : '产品线已添加';
+  showToast(learned ? base + '，「' + (enFinal || zhList[0]) + '」已记入本地词库' : base, 'success');
 }
 
 function deleteProductLine(supplierId, plId) {
@@ -2802,6 +3379,7 @@ function deleteProductLine(supplierId, plId) {
 }
 
 function closeModal() {
+  supplierModalFromBatch = false;
   document.getElementById('modal-container').innerHTML = '';
 }
 
@@ -3372,9 +3950,12 @@ function confirmSmartPaste() {
   const now = new Date().toISOString();
   let added = 0;
   for (const r of smartPasteResults) {
+    const rf = resolveBrandName(r.brand || '');
     supplier.productLines.push({
       id: generateId(),
-      brand: r.brand || '',
+      brand: rf.en || rf.zh[0] || r.brand || '',
+      brandEn: rf.en,
+      brandZh: rf.zh.slice(),
       lineName: r.lineName || '',
       mainSeries: r.mainSeries || '',
       remark: r.remark || '',
@@ -3400,6 +3981,13 @@ let batchState = {
   newName: '',
   done: null
 };
+let supplierModalFromBatch = false;
+
+// 从批量导入视图打开"新增供应商"完整表单，保存后自动选中该公司
+function openSupplierModalFromBatch() {
+  supplierModalFromBatch = true;
+  openSupplierModal();
+}
 
 function onBatchRawInput(val) {
   batchState.rawText = val || '';
@@ -3415,8 +4003,8 @@ function renderBatchSidebar() {
   container.innerHTML = `
     <div class="empty-section" style="text-align:left;padding:18px 14px;line-height:1.9">
       <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px">&#x1F4E5; 批量导入模式</div>
-      <div style="font-size:12px;color:var(--text-muted)">在右侧粘贴品牌目录文字，提取后核对清单，确认无误才会写入。</div>
-      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">与原有「+ 添加产品线」手动录入互不影响。</div>
+      <div style="font-size:12px;color:var(--text-muted)">在右侧粘贴品牌目录文字，提取后自动配对中英文名，核对清单确认无误才会写入。</div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">词典查不到的品牌会进「待补译名」，不会自动乱翻译。</div>
     </div>
   `;
 }
@@ -3467,7 +4055,7 @@ function renderBatchImport() {
           <textarea class="batch-textarea" id="batch-raw-input" oninput="onBatchRawInput(this.value)"
             placeholder="把供应商网页上的品牌目录整段复制粘贴到这里，例如：&#10;A&#10;3M&#10;1,517 Products&#10;ABB&#10;1,041,482 Products&#10;...">${escHtml(batchState.rawText)}</textarea>
           <div class="batch-hint">
-            会自动去掉：品牌后面的产品数量（如 <code>1,517 Products</code>）、A/B/C 字母分组标题、空行、行首序号和多余符号。英文品牌保持原样，不做翻译改写。
+            会自动去掉：品牌后面的产品数量（如 <code>1,517 Products</code>）、A/B/C 字母分组标题、空行、行首序号和多余符号。提取后会先查内置英中词典把两种语言配对；查不到的品牌不会硬猜，会归入「待补译名」等你手动补。
           </div>
           <div class="batch-actions">
             <button class="btn btn-primary" onclick="extractBatchBrands()">&#x1F50D; 提取并预览</button>
@@ -3486,16 +4074,18 @@ function renderBatchImport() {
               ${targetOptions}
               <option value="__new__" ${isNewTarget ? 'selected' : ''}>＋ 新建公司…</option>
             </select>
+            <button class="btn btn-primary" style="white-space:nowrap" onclick="openSupplierModalFromBatch()">&#xFF0B; 新增供应商</button>
             <input type="text" id="batch-new-name" placeholder="填写公司名称，如：Arrow 艾睿"
               value="${escAttr(batchState.newName || '')}"
               oninput="onBatchNewNameInput(this.value)"
               style="${isNewTarget ? '' : 'display:none'}" />
           </div>
-          <div class="batch-hint">选择这批品牌要归入的公司。新建公司时若名称与已有公司重名，会直接并入已有公司，不会重复创建。</div>
+          <div class="batch-hint">选择这批品牌要归入的公司。下拉最后一项「＋ 新建公司…」可快速只填名字；点「＋ 新增供应商」可填写完整信息（类型、地区等）。新建时若名称与已有公司重名，会直接并入已有公司，不会重复创建。</div>
         </div>
       </div>
 
       <div class="detail-card" id="batch-preview-card" style="display:none"></div>
+      <div class="detail-card" id="batch-pending-card" style="display:none"></div>
     </div>
   `;
   renderBatchPreview();
@@ -3503,11 +4093,13 @@ function renderBatchImport() {
 
 function renderBatchPreview() {
   const card = document.getElementById('batch-preview-card');
+  const pendCard = document.getElementById('batch-pending-card');
   if (!card) return;
 
   if (!batchState.parsed) {
     card.style.display = 'none';
     card.innerHTML = '';
+    if (pendCard) { pendCard.style.display = 'none'; pendCard.innerHTML = ''; }
     return;
   }
   card.style.display = '';
@@ -3527,26 +4119,38 @@ function renderBatchPreview() {
           </span>
         </div>
       </div>`;
+    if (pendCard) { pendCard.style.display = 'none'; pendCard.innerHTML = ''; }
     return;
   }
 
   const total = batchState.items.length;
   const checkedCount = batchState.items.filter(i => i.checked).length;
   const existsCount = batchState.items.filter(i => i.exists).length;
+  const pairedCount = batchState.items.filter(i => i.brandEn && i.brandZh.length).length;
 
-  const rows = batchState.items.map(it => `
+  const rows = batchState.items.map(it => {
+    const primary = it.brandEn || it.brandZh[0] || '';
+    let pairHtml = '';
+    if (it.brandEn && it.brandZh.length) {
+      pairHtml = `<span class="batch-pair">${escHtml(it.brandEn)}（${escHtml(it.brandZh.join('、'))}）</span>`;
+    } else if (it.brandEn || it.brandZh.length) {
+      pairHtml = `<span class="batch-badge-pending">待补${it.brandEn ? '中文名' : '英文名'}</span>`;
+    }
+    return `
     <div class="batch-row ${it.checked ? '' : 'unchecked'}" data-batch-row="${escAttr(it.id)}">
       <input type="checkbox" ${it.checked ? 'checked' : ''} onchange="toggleBatchItem('${escAttr(it.id)}', this.checked)" />
-      <input type="text" class="batch-brand-input" value="${escAttr(it.brand)}" oninput="editBatchItem('${escAttr(it.id)}', this.value)" />
+      <input type="text" class="batch-brand-input" value="${escAttr(primary)}" oninput="editBatchItem('${escAttr(it.id)}', this.value)" />
+      ${pairHtml}
       <span class="batch-badge-exists ${it.exists ? '' : 'hide'}">已存在</span>
       <button class="btn-icon danger" title="删除" onclick="removeBatchItem('${escAttr(it.id)}')">&#x2715;</button>
     </div>
-  `).join('');
+  `;
+  }).join('');
 
   card.innerHTML = `
     <div class="card-header">
       <h3>&#x2462; 待核对清单</h3>
-      <span class="count">共 ${total} 个品牌</span>
+      <span class="count">共 ${total} 个品牌，${pairedCount} 个已双语配对</span>
     </div>
     <div class="batch-toolbar">
       <button class="link-btn" onclick="setAllBatchChecked(true)">全选</button>
@@ -3561,6 +4165,104 @@ function renderBatchPreview() {
       <button class="btn btn-primary" id="batch-confirm-btn" onclick="confirmBatchImport()" ${checkedCount === 0 ? 'disabled' : ''}>&#x2714; 确认导入</button>
     </div>
   `;
+
+  renderBatchPending();
+}
+
+// 未配对的品牌单独列一张「待补译名」清单，由用户手动补另一种语言
+function renderBatchPending() {
+  const card = document.getElementById('batch-pending-card');
+  if (!card) return;
+
+  const pending = batchState.items.filter(it => !(it.brandEn && it.brandZh.length) && (it.brandEn || it.brandZh.length));
+  if (!pending.length) {
+    card.style.display = 'none';
+    card.innerHTML = '';
+    return;
+  }
+  card.style.display = '';
+
+  const rows = pending.map(it => {
+    const needZh = !!it.brandEn;
+    const known = it.brandEn || it.brandZh[0] || '';
+    return `
+      <div class="pending-trans-row">
+        <span class="pending-trans-name">${escHtml(known)}</span>
+        <input type="text" id="pend-input-${escAttr(it.id)}" placeholder="${needZh ? '填写中文名（多个别名用 / 分隔）' : '填写英文名'}" value="${escAttr(it.fill || '')}" />
+      </div>
+    `;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="card-header">
+      <h3>&#x2463; 待补译名</h3>
+      <span class="count">${pending.length} 个</span>
+    </div>
+    <div class="card-body">
+      <div class="batch-hint">
+        这些品牌词典里没有，<strong>程序不会自动翻译、不会编造</strong>。你可以手动补上另一种语言，保存后会记入你的本地词库 —— 下次录入同一品牌，无论写中文还是英文都能自动配对。
+      </div>
+      <div class="pending-trans-list">${rows}</div>
+      <div class="batch-actions">
+        <button class="btn btn-primary" onclick="saveBatchPendingTranslations()">&#x1F4BE; 保存到词库并重新配对</button>
+      </div>
+    </div>
+  `;
+}
+
+// 把用户填的译名存入本地词库，然后重新跑一遍配对
+function saveBatchPendingTranslations() {
+  let learned = 0, incomplete = 0;
+
+  batchState.items.forEach(it => {
+    if (it.brandEn && it.brandZh.length) return;      // 已配对，跳过
+    const el = document.getElementById('pend-input-' + it.id);
+    const val = el ? el.value.trim() : (it.fill || '').trim();
+    if (!val) return;
+    it.fill = val;
+
+    let en = it.brandEn || '';
+    let zh = (it.brandZh || []).slice();
+    if (hasCJK(val)) {
+      if (!zh.length) zh = val.split(/[\/|｜、,，;；]+/).map(s => s.trim()).filter(Boolean);
+    } else {
+      if (!en) en = val;
+      else if (!zh.length) zh = [val];
+    }
+    if (!en || !zh.length) { incomplete++; return; }
+    if (learnBrandPair(en, zh)) learned++;
+    it.brandEn = en;
+    it.brandZh = zh;
+    it.known = true;
+    it.fill = '';
+  });
+
+  refreshBatchItemsFromDict();
+
+  if (learned) {
+    saveData();
+    showToast(`已把 ${learned} 个品牌记入本地词库`, 'success');
+  } else if (incomplete) {
+    showToast('还有 ' + incomplete + ' 个品牌的译名不足以配对，请检查填写', 'error');
+  } else {
+    showToast('请先填写要补充的译名', 'info');
+  }
+  renderBatchPreview();
+}
+
+// 按当前词库重新解析所有条目（词库更新后调用）
+function refreshBatchItemsFromDict() {
+  const existsSet = getBatchExistingBrandSet();
+  batchState.items.forEach(it => {
+    const name = it.brandEn || (it.brandZh || [])[0] || it.raw || '';
+    const r = resolveBrandName(name);
+    it.brandEn = r.en;
+    it.brandZh = r.zh.slice();
+    it.known = r.known;
+    it.key = r.key || normBrandName(name);
+    it.exists = existsSet.has(it.key);
+    if (it.exists) it.checked = false;
+  });
 }
 
 function updateBatchSummary() {
@@ -3675,13 +4377,14 @@ function getBatchTargetSupplier() {
   return appData.suppliers.find(s => s.id === batchState.targetId) || null;
 }
 
+// 目标公司已有的品牌实体键集合（用于按"品牌实体"去重，中英文写法视为同一品牌）
 function getBatchExistingBrandSet() {
   const set = new Set();
   const supplier = getBatchTargetSupplier();
   if (supplier) {
     (supplier.productLines || []).forEach(pl => {
-      const b = (pl.brand || '').trim().toLowerCase();
-      if (b) set.add(b);
+      const k = brandEntityKey(pl);
+      if (k) set.add(k);
     });
   }
   return set;
@@ -3706,10 +4409,18 @@ function extractBatchBrands() {
   const brands = extractBrandsFromText(batchState.rawText);
   const existsSet = getBatchExistingBrandSet();
   batchState.items = brands.map((b, idx) => {
-    const exists = existsSet.has(b.toLowerCase());
+    // 提取出的每个品牌立刻查词典配对；查不到就只保留原写法，绝不猜测翻译
+    const r = resolveBrandName(b);
+    const key = r.key || normBrandName(b);
+    const exists = existsSet.has(key);
     return {
       id: 'bi_' + Date.now().toString(36) + '_' + idx,
-      brand: b,
+      raw: b,
+      brandEn: r.en,
+      brandZh: r.zh.slice(),
+      known: r.known,
+      key: key,
+      fill: '',
       checked: !exists,
       exists
     };
@@ -3721,7 +4432,9 @@ function extractBatchBrands() {
   if (!batchState.items.length) {
     showToast('未识别到品牌，请检查粘贴内容', 'error');
   } else {
-    showToast(`识别到 ${batchState.items.length} 个品牌，请核对后确认导入`, 'success');
+    const paired = batchState.items.filter(i => i.brandEn && i.brandZh.length).length;
+    const pending = batchState.items.filter(i => !(i.brandEn && i.brandZh.length)).length;
+    showToast(`识别到 ${batchState.items.length} 个品牌（${paired} 个已配对${pending ? `，${pending} 个待补译名` : ''}）`, 'success');
     const card = document.getElementById('batch-preview-card');
     if (card && card.scrollIntoView) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -3739,15 +4452,29 @@ function toggleBatchItem(id, checked) {
 function editBatchItem(id, val) {
   const it = batchState.items.find(i => i.id === id);
   if (!it) return;
-  it.brand = val;
-  const low = (val || '').trim().toLowerCase();
-  it.exists = !!low && getBatchExistingBrandSet().has(low);
+  it.raw = val;
+  // 改名字后重新查词典：改成一个词典里有的品牌，会自动补上另一种语言
+  const r = resolveBrandName(val);
+  it.brandEn = r.en;
+  it.brandZh = r.zh.slice();
+  it.known = r.known;
+  it.key = r.key || normBrandName(val);
+  it.exists = !!it.key && getBatchExistingBrandSet().has(it.key);
+
   const row = document.querySelector(`[data-batch-row="${id}"]`);
   if (row) {
     const badge = row.querySelector('.batch-badge-exists');
     if (badge) badge.classList.toggle('hide', !it.exists);
+    const pair = row.querySelector('.batch-pair');
+    const pendBadge = row.querySelector('.batch-badge-pending');
+    if (it.brandEn && it.brandZh.length) {
+      if (pair) pair.textContent = it.brandEn + '（' + it.brandZh.join('、') + '）';
+    } else if (pendBadge) {
+      pendBadge.textContent = '待补' + (it.brandEn ? '中文名' : '英文名');
+    }
   }
   updateBatchSummary();
+  renderBatchPending();
 }
 
 function removeBatchItem(id) {
@@ -3772,8 +4499,7 @@ function onBatchTargetChange() {
   batchState.newName = '';
   const existsSet = getBatchExistingBrandSet();
   batchState.items.forEach(i => {
-    const low = (i.brand || '').trim().toLowerCase();
-    i.exists = !!low && existsSet.has(low);
+    i.exists = !!i.key && existsSet.has(i.key);
     if (i.exists) i.checked = false;             // 已存在的直接取消勾选
   });
   renderBatchPreview();
@@ -3791,7 +4517,7 @@ function confirmBatchImport() {
   if (!batchState.parsed) { showToast('请先提取并预览', 'error'); return; }
   if (!batchState.items.length) { showToast('未识别到品牌，无法导入', 'error'); return; }
 
-  const picked = batchState.items.filter(i => i.checked && (i.brand || '').trim());
+  const picked = batchState.items.filter(i => i.checked && (i.brandEn || (i.brandZh || []).length || i.raw));
   if (!picked.length) { showToast('请至少勾选一个品牌', 'error'); return; }
 
   // 1) 确定目标公司
@@ -3825,27 +4551,34 @@ function confirmBatchImport() {
 
   // 2) 去重后批量写入（字段与原手动录入完全一致）
   const now = new Date().toISOString();
-  const existing = new Set(
-    (supplier.productLines || [])
-      .map(pl => (pl.brand || '').trim().toLowerCase())
-      .filter(Boolean)
-  );
-  let added = 0, skipped = 0;
+  // 按「品牌实体」去重：英文名 / 中文名 / 别名都算同一个品牌
+  const existing = new Set();
+  (supplier.productLines || []).forEach(pl => {
+    const k = brandEntityKey(pl);
+    if (k) existing.add(k);
+  });
+  let added = 0, skipped = 0, learned = 0;
   for (const it of picked) {
-    const brand = (it.brand || '').trim();
-    if (!brand) continue;
-    const low = brand.toLowerCase();
-    if (existing.has(low)) { skipped++; continue; }
-    existing.add(low);
+    const en = (it.brandEn || '').trim();
+    const zh = (it.brandZh || []).map(x => String(x || '').trim()).filter(Boolean);
+    const name = en || zh[0] || (it.raw || '').trim();
+    if (!name) continue;
+    const key = it.key || brandEntityKey({ brand: name });
+    if (existing.has(key)) { skipped++; continue; }
+    existing.add(key);
     supplier.productLines.push({
       id: generateId(),
-      brand: brand,
+      brand: en || zh[0] || name,     // 兼容老字段
+      brandEn: en,
+      brandZh: zh,
       lineName: '',
       mainSeries: '',
       remark: '',
       contacts: [],
       createdAt: now
     });
+    // 双语齐全但词典里没有 → 顺手记进本地词库，下次自动配对
+    if (en && zh.length && learnBrandPair(en, zh)) learned++;
     added++;
   }
 
@@ -3864,7 +4597,451 @@ function confirmBatchImport() {
   };
   closeSidebar();
   renderAll();
-  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}`, 'success');
+  showToast(`已导入 ${added} 个品牌${skipped ? `，跳过 ${skipped} 个重复` : ''}${learned ? `，${learned} 个新品牌已记入词库` : ''}`, 'success');
+}
+
+/* ===== 品牌词典管理（工作台内可视化维护） =====
+   - 内置词条只读展示；改动时写入 appData.brandDict 作为「覆盖」（builtinKey 绑定原内置词条）
+   - 自定义词条直接增删改
+   - 任何改动立即失效索引 → 录入配对 / 反查分组 / 去重判断马上生效
+*/
+let dictQuery = '';
+let dictFilter = 'all';
+let dictPending = null;   // null = 还没扫描
+
+// 中文名/别名：字符串按分隔符拆成数组
+function normalizeNameList(v) {
+  if (Array.isArray(v)) return v.map(x => String(x || '').trim()).filter(Boolean);
+  return String(v == null ? '' : v)
+    .split(/[\/|｜、,，;；]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
+// 合并内置 + 用户词库 → 可展示、可编辑的行
+function getBrandDictRows() {
+  const rows = [];
+  const userRaw = getUserBrandDict();
+  const userMap = Object.create(null);
+
+  userRaw.forEach((e, i) => {
+    if (!e) return;
+    const zhList = normalizeNameList(e.zh);
+    const key = normBrandName(e.builtinKey || e.en || zhList[0] || '');
+    if (key && userMap[key] === undefined) userMap[key] = { entry: e, index: i };
+  });
+
+  const matched = new Set();
+  BUILTIN_BRAND_DICT.forEach((b, bi) => {
+    const key = normBrandName(b.en);
+    const u = userMap[key];
+    if (u) matched.add(u.index);
+    rows.push({
+      ref: 'b:' + bi,
+      source: u ? 'override' : 'builtin',
+      userIndex: u ? u.index : -1,
+      en: u ? String(u.entry.en || b.en).trim() : b.en,
+      zh: u ? normalizeNameList(u.entry.zh) : (b.zh || []).slice(),
+      alias: u ? normalizeNameList(u.entry.alias) : (b.alias || []).slice()
+    });
+  });
+
+  userRaw.forEach((e, i) => {
+    if (!e || matched.has(i)) return;
+    const zhList = normalizeNameList(e.zh);
+    const en = String(e.en || '').trim();
+    if (!en && !zhList.length) return;
+    rows.push({
+      ref: 'u:' + i,
+      source: 'user',
+      userIndex: i,
+      en: en,
+      zh: zhList,
+      alias: normalizeNameList(e.alias)
+    });
+  });
+
+  return rows;
+}
+
+function dictMatchQuery(row, q) {
+  if (!q) return true;
+  const raw = String(q).toLowerCase().trim();
+  if ([row.en].concat(row.zh, row.alias).join(' ').toLowerCase().includes(raw)) return true;
+  // 「xiaoming」「texasinstruments」这种去掉空格/标点的写法也能搜到
+  const nq = normBrandName(q);
+  if (!nq) return false;
+  return [row.en].concat(row.zh, row.alias).some(n => n && normBrandName(n).includes(nq));
+}
+
+function renderBrandDictSidebar() {
+  const c = document.getElementById('supplier-list');
+  if (!c) return;
+  const rows = getBrandDictRows();
+  const userCount = rows.filter(r => r.source === 'user').length;
+  const overCount = rows.filter(r => r.source === 'override').length;
+  c.innerHTML = `
+    <div class="empty-section" style="text-align:left;padding:18px 14px;line-height:1.9">
+      <div style="font-weight:600;color:var(--text-secondary);margin-bottom:6px">&#x1F4D6; 品牌词典</div>
+      <div style="font-size:12px;color:var(--text-muted)">
+        共 ${rows.length} 条 · 内置 ${BUILTIN_BRAND_DICT.length} 条 · 自定义 ${userCount} 条 · 已改写 ${overCount} 条
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
+        左上角搜索框可以直接过滤词条。改完立刻生效，不用改代码。
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
+        词典随数据一起同步到云端，换设备也在。
+      </div>
+    </div>
+  `;
+}
+
+function renderBrandDictView() {
+  const container = document.getElementById('main-content');
+  if (!container) return;
+
+  // 已经渲染过骨架 → 只刷新动态部分，避免打断输入
+  if (document.getElementById('dict-rows')) {
+    renderDictFilters();
+    renderDictRows();
+    renderDictPendingCard();
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="dict-wrap">
+      <div class="detail-header">
+        <div class="title-group">
+          <h2>&#x1F4D6; 品牌词典</h2>
+          <div class="subtitle">英文名 ↔ 中文名对照表，随时增删改，改完立即生效</div>
+        </div>
+      </div>
+
+      <div class="detail-card">
+        <div class="card-header">
+          <h3>词条列表</h3>
+          <span class="count" id="dict-count"></span>
+        </div>
+        <div class="dict-toolbar">
+          <input class="dict-search" id="dict-search" type="text"
+            placeholder="搜索英文名 / 中文名 / 别名..."
+            oninput="onDictSearch(this.value)" />
+          <button class="btn btn-sm btn-primary" onclick="openBrandDictModal('')">＋ 新增品牌</button>
+          <button class="btn btn-sm" onclick="exportBrandDict()">导出词典</button>
+        </div>
+        <div class="dict-filters" id="dict-filters"></div>
+        <div class="dict-head">
+          <span>英文名</span><span>中文名</span><span>别名 / 缩写</span><span>来源</span><span></span>
+        </div>
+        <div id="dict-rows"></div>
+      </div>
+
+      <div class="detail-card" id="dict-pending-card"></div>
+    </div>
+  `;
+
+  renderDictFilters();
+  renderDictRows();
+  renderDictPendingCard();
+}
+
+function renderDictFilters() {
+  const box = document.getElementById('dict-filters');
+  if (!box) return;
+  const opts = [
+    { k: 'all', label: '全部' },
+    { k: 'builtin', label: '内置' },
+    { k: 'user', label: '自定义' },
+    { k: 'override', label: '已改写' }
+  ];
+  box.innerHTML = opts.map(o =>
+    `<button class="filter-tab ${dictFilter === o.k ? 'active' : ''}" onclick="setDictFilter('${o.k}')">${o.label}</button>`
+  ).join('');
+}
+
+function setDictFilter(k) {
+  dictFilter = k;
+  renderDictFilters();
+  renderDictRows();
+}
+
+function onDictSearch(val) {
+  dictQuery = val || '';
+  const side = document.getElementById('search-input');
+  if (side) side.value = dictQuery;
+  renderDictRows();
+}
+
+function renderDictRows() {
+  const box = document.getElementById('dict-rows');
+  if (!box) return;
+
+  let rows = getBrandDictRows();
+  if (dictFilter !== 'all') rows = rows.filter(r => r.source === dictFilter);
+  const q = String(dictQuery || '').trim().toLowerCase();
+  if (q) rows = rows.filter(r => dictMatchQuery(r, q));
+  rows.sort((a, b) => String(a.en || a.zh[0] || '').localeCompare(String(b.en || b.zh[0] || ''), 'en'));
+
+  const cnt = document.getElementById('dict-count');
+  if (cnt) cnt.textContent = rows.length + ' 条';
+
+  if (!rows.length) {
+    box.innerHTML = `<div class="dict-empty">没有匹配的词条。点上方「＋ 新增品牌」自己加一条。</div>`;
+    return;
+  }
+
+  box.innerHTML = rows.map(r => {
+    const badge = r.source === 'user'
+      ? '<span class="dict-badge user">自定义</span>'
+      : (r.source === 'override'
+        ? '<span class="dict-badge over">已改写</span>'
+        : '<span class="dict-badge">内置</span>');
+    const canDelete = r.source !== 'builtin';
+    const delTitle = r.source === 'override' ? '恢复内置词条' : '删除词条';
+    return `
+      <div class="dict-row">
+        <div class="dict-en">${r.en ? escHtml(r.en) : '<span class="dict-miss">待补英文名</span>'}</div>
+        <div class="dict-zh">${r.zh.length ? escHtml(r.zh.join('、')) : '<span class="dict-miss">待补中文名</span>'}</div>
+        <div class="dict-alias">${r.alias.length ? escHtml(r.alias.join('、')) : '—'}</div>
+        <div>${badge}</div>
+        <div class="dict-actions">
+          <button class="btn-icon" title="编辑" onclick="openBrandDictModal('${r.ref}')">&#x270F;</button>
+          ${canDelete ? `<button class="btn-icon danger" title="${delTitle}" onclick="deleteBrandDictEntry('${r.ref}')">&#x2715;</button>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function openBrandDictModal(ref) {
+  const rows = getBrandDictRows();
+  const row = ref ? rows.find(r => r.ref === ref) : null;
+  const isEdit = !!row;
+  const en = row ? row.en : '';
+  const zh = row ? row.zh.join('、') : '';
+  const alias = row ? row.alias.join('、') : '';
+
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:520px">
+        <div class="modal-header">
+          <h3>${isEdit ? '编辑品牌词条' : '新增品牌词条'}</h3>
+          <button class="btn-icon" onclick="closeModal()">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>品牌英文名</label>
+            <input type="text" id="dict-en" value="${escAttr(en)}" placeholder="如：Texas Instruments">
+          </div>
+          <div class="form-group">
+            <label>品牌中文名 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（可填多个别名，用顿号或斜杠分隔）</span></label>
+            <input type="text" id="dict-zh" value="${escAttr(zh)}" placeholder="如：德州仪器、德仪">
+          </div>
+          <div class="form-group">
+            <label>别名 / 缩写 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（如 TI、TXN，用顿号分隔）</span></label>
+            <input type="text" id="dict-alias" value="${escAttr(alias)}" placeholder="如：TI、TXN">
+          </div>
+          <div class="batch-hint">
+            中英两边至少填一边。只填一边时，录入界面会提示该品牌待补另一语言，不会自动乱翻译。
+            ${isEdit && row.source === 'builtin' ? '<br>保存后会覆盖内置词条，之后可以用 ✕ 恢复成内置内容。' : ''}
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveBrandDictEntry('${ref || ''}')">保存</button>
+        </div>
+      </div>
+    </div>`;
+  setTimeout(() => { const el = document.getElementById('dict-en'); if (el) el.focus(); }, 50);
+}
+
+function saveBrandDictEntry(ref) {
+  const enEl = document.getElementById('dict-en');
+  const zhEl = document.getElementById('dict-zh');
+  const aliasEl = document.getElementById('dict-alias');
+  const en = (enEl ? enEl.value : '').trim();
+  const zh = normalizeNameList(zhEl ? zhEl.value : '');
+  const alias = normalizeNameList(aliasEl ? aliasEl.value : '');
+
+  if (!en && !zh.length) { showToast('英文名和中文名至少填一个', 'error'); return; }
+
+  const dict = getUserBrandDict();
+  const rows = getBrandDictRows();
+  const row = ref ? rows.find(r => r.ref === ref) : null;
+  const now = new Date().toISOString();
+
+  // 英文名是规范主名，已有英文名的词条不允许清空（防手滑把品牌弄丢）
+  if (!en && row && row.en) {
+    showToast('英文名不能清空，如需改名请直接填写新的英文名', 'error');
+    return;
+  }
+
+  // 原本指向哪条内置词条（编辑内置 / 编辑已有的覆盖条目时都要保持绑定）
+  let origBuiltin = '';
+  if (ref && ref.indexOf('b:') === 0) {
+    const b = BUILTIN_BRAND_DICT[parseInt(ref.slice(2), 10)];
+    if (b) origBuiltin = b.en;
+  } else if (row && row.source === 'override' && row.userIndex >= 0) {
+    const prev = dict[row.userIndex] || {};
+    origBuiltin = prev.builtinKey
+      || ((BUILTIN_BRAND_DICT.find(b => normBrandName(b.en) === normBrandName(prev.en || '')) || {}).en || '');
+  }
+  if (!origBuiltin && en) {
+    const hit = BUILTIN_BRAND_DICT.find(b => normBrandName(b.en) === normBrandName(en));
+    if (hit) origBuiltin = hit.en;
+  }
+
+  const payload = { en: en, zh: zh, alias: alias, updatedAt: now };
+  if (origBuiltin) payload.builtinKey = origBuiltin;
+
+  if (row && row.userIndex >= 0 && dict[row.userIndex]) {
+    dict[row.userIndex] = payload;
+  } else {
+    dict.push(payload);
+  }
+
+  invalidateBrandIndex();
+  saveData();
+  closeModal();
+  renderBrandDictView();
+  showToast('词条已保存，全站立即生效', 'success');
+}
+
+function deleteBrandDictEntry(ref) {
+  const rows = getBrandDictRows();
+  const row = rows.find(r => r.ref === ref);
+  if (!row || row.userIndex < 0) return;
+
+  const isOverride = row.source === 'override';
+  const label = row.en || row.zh[0] || '该词条';
+  if (!confirm(isOverride ? `恢复「${label}」的内置内容？` : `确定删除「${label}」这条自定义词条？`)) return;
+
+  const dict = getUserBrandDict();
+  dict.splice(row.userIndex, 1);
+  invalidateBrandIndex();
+  saveData();
+  renderBrandDictView();
+  showToast(isOverride ? '已恢复内置内容' : '词条已删除', 'info');
+}
+
+function exportBrandDict() {
+  const rows = getBrandDictRows().map(r => ({
+    en: r.en, zh: r.zh, alias: r.alias, source: r.source
+  }));
+  const data = {
+    exportedAt: new Date().toISOString(),
+    count: rows.length,
+    brands: rows
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '品牌词典-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  showToast('词典已导出', 'success');
+}
+
+/* ---- 待补译名：扫描已录入产品线里词典没有的品牌 ---- */
+function scanDictPending() {
+  const map = new Map();
+  appData.suppliers.forEach(s => {
+    (s.productLines || []).forEach(pl => {
+      const f = brandFieldsOf(pl);
+      const name = f.en || f.zh[0] || '';
+      if (!name) return;
+      if (resolveBrandName(name).known) return;
+      const key = brandEntityKey(pl) || normBrandName(name);
+      if (!key) return;
+      if (!map.has(key)) {
+        map.set(key, { key, en: f.en || '', zh: f.zh.slice(), count: 0 });
+      }
+      map.get(key).count++;
+    });
+  });
+  dictPending = Array.from(map.values()).sort((a, b) => b.count - a.count);
+  renderDictPendingCard();
+  showToast(dictPending.length
+    ? `发现 ${dictPending.length} 个词典未收录的品牌`
+    : '已录入的品牌都能配对，没有待补项', dictPending.length ? 'info' : 'success');
+}
+
+function renderDictPendingCard() {
+  const card = document.getElementById('dict-pending-card');
+  if (!card) return;
+
+  if (dictPending === null) {
+    card.innerHTML = `
+      <div class="card-header"><h3>&#x2462; 待补译名</h3></div>
+      <div class="card-body">
+        <div class="batch-hint" style="margin-top:0">
+          扫一遍已经录入的产品线，把词典里还没有的品牌挑出来。补上另一种语言后写进词典，以后录入同一品牌（写英文或中文都行）自动配对。
+        </div>
+        <div class="batch-actions">
+          <button class="btn btn-primary" onclick="scanDictPending()">&#x1F50D; 扫描已录入品牌</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  if (!dictPending.length) {
+    card.innerHTML = `
+      <div class="card-header">
+        <h3>&#x2462; 待补译名</h3>
+        <span class="count">0 个</span>
+      </div>
+      <div class="card-body">
+        <div class="batch-done" style="display:block">&#x2705; 已录入的品牌全部能双语配对，没有待补项。</div>
+        <div class="batch-actions">
+          <button class="btn btn-sm" onclick="scanDictPending()">重新扫描</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const rows = dictPending.map((p, i) => {
+    const needZh = !!p.en;
+    const shown = p.en || p.zh.join('、');
+    return `
+      <div class="pending-trans-row">
+        <span class="pending-trans-name">${escHtml(shown)}<span class="dict-hit">${p.count} 条</span></span>
+        <input type="text" id="dict-fill-${i}"
+          placeholder="${needZh ? '填写中文名，多个用、分隔' : '填写英文名'}" />
+      </div>`;
+  }).join('');
+
+  card.innerHTML = `
+    <div class="card-header">
+      <h3>&#x2462; 待补译名</h3>
+      <span class="count">${dictPending.length} 个品牌</span>
+    </div>
+    <div class="card-body">
+      <div class="pending-trans-list">${rows}</div>
+      <div class="batch-actions">
+        <button class="btn btn-primary" onclick="saveDictPendingFills()">保存到词典并重新配对</button>
+        <button class="btn" onclick="scanDictPending()">重新扫描</button>
+        <button class="btn" onclick="dictPending=null;renderDictPendingCard()">收起</button>
+      </div>
+      <div class="batch-hint">留空的会跳过，绝不自作主张翻译。</div>
+    </div>`;
+}
+
+function saveDictPendingFills() {
+  let learned = 0, skipped = 0;
+  (dictPending || []).forEach((p, i) => {
+    const el = document.getElementById('dict-fill-' + i);
+    if (!el) return;
+    const val = normalizeNameList(el.value);
+    if (!val.length) { skipped++; return; }
+    const en = p.en || val[0];
+    const zh = p.en ? val : p.zh.slice();
+    if (learnBrandPair(en, zh)) learned++;
+  });
+  invalidateBrandIndex();
+  if (learned) saveData();
+  scanDictPending();
+  showToast(learned ? `已补充 ${learned} 个品牌译名` : '没有填写新的译名', learned ? 'success' : 'info');
 }
 
 /* ===== GitHub Cloud Sync ===== */
@@ -4197,7 +5374,8 @@ async function githubPull() {
           return;
         }
       }
-      appData = content;
+      appData = mergeBrandDictBeforeOverwrite(content);
+      ensureAppDataShape();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
       hasUnsyncedChanges = false;
       selectedSupplierId = null;
@@ -4305,6 +5483,7 @@ function confirmImport(dataB64) {
   try {
     const data = JSON.parse(atob(dataB64));
     appData = data;
+    ensureAppDataShape();
     selectedSupplierId = null;
     saveData();
     closeModal();
@@ -4317,7 +5496,7 @@ function confirmImport(dataB64) {
 
 function exportCSV() {
   const BOM = '\uFEFF';
-  const headers = ['供应商名称', '供应商类型', '所在地区', '合作状态', '品牌', '产品线', '主要系列', '产品线备注', '主联系人', '联系人职位', '联系人手机', '联系人微信', '联系人邮箱', '联系人备注', '供应商备注'];
+  const headers = ['供应商名称', '供应商类型', '所在地区', '合作状态', '品牌', '品牌英文名', '品牌中文名', '产品线', '主要系列', '产品线备注', '主联系人', '联系人职位', '联系人手机', '联系人微信', '联系人邮箱', '联系人备注', '供应商备注'];
   let rows = [headers.join(',')];
 
   appData.suppliers.forEach(s => {
@@ -4328,7 +5507,7 @@ function exportCSV() {
     if (s.productLines.length === 0) {
       rows.push([
         escCsv(s.name), escCsv(type), escCsv(s.region), escCsv(st),
-        '', '', '', '',
+        '', '', '', '', '', '',
         escCsv(mainContact.name || ''), escCsv(mainContact.position || ''),
         escCsv(mainContact.phone || ''), escCsv(mainContact.wechat || ''),
         escCsv(mainContact.email || ''), escCsv(mainContact.remark || ''),
@@ -4336,9 +5515,11 @@ function exportCSV() {
       ].join(','));
     } else {
       s.productLines.forEach(pl => {
+        const bf = brandFieldsOf(pl);
         rows.push([
           escCsv(s.name), escCsv(type), escCsv(s.region), escCsv(st),
-          escCsv(pl.brand), escCsv(pl.lineName), escCsv(pl.mainSeries), escCsv(pl.remark),
+          escCsv(brandDisplay(pl)), escCsv(bf.en), escCsv(bf.zh.join('、')),
+          escCsv(pl.lineName), escCsv(pl.mainSeries), escCsv(pl.remark),
           escCsv(mainContact.name || ''), escCsv(mainContact.position || ''),
           escCsv(mainContact.phone || ''), escCsv(mainContact.wechat || ''),
           escCsv(mainContact.email || ''), escCsv(mainContact.remark || ''),
@@ -4374,7 +5555,7 @@ function exportExcel() {
     return;
   }
 
-  const headers = ['供应商名称', '供应商类型', '所在地区', '合作状态', '品牌', '产品线', '主要系列', '产品线备注', '主联系人', '联系人职位', '联系人手机', '联系人微信', '联系人邮箱', '联系人备注', '供应商备注'];
+  const headers = ['供应商名称', '供应商类型', '所在地区', '合作状态', '品牌', '品牌英文名', '品牌中文名', '产品线', '主要系列', '产品线备注', '主联系人', '联系人职位', '联系人手机', '联系人微信', '联系人邮箱', '联系人备注', '供应商备注'];
   const aoa = [headers];
 
   appData.suppliers.forEach(s => {
@@ -4384,10 +5565,11 @@ function exportExcel() {
     const contactRow = [mc.name || '', mc.position || '', mc.phone || '', mc.wechat || '', mc.email || '', mc.remark || ''];
 
     if (s.productLines.length === 0) {
-      aoa.push([s.name, type, s.region, st, '', '', '', '', ...contactRow, s.remark || '']);
+      aoa.push([s.name, type, s.region, st, '', '', '', '', '', '', ...contactRow, s.remark || '']);
     } else {
       s.productLines.forEach(pl => {
-        aoa.push([s.name, type, s.region, st, pl.brand, pl.lineName, pl.mainSeries, pl.remark, ...contactRow, s.remark || '']);
+        const bf = brandFieldsOf(pl);
+        aoa.push([s.name, type, s.region, st, brandDisplay(pl), bf.en, bf.zh.join('、'), pl.lineName, pl.mainSeries, pl.remark, ...contactRow, s.remark || '']);
       });
     }
   });
@@ -4395,7 +5577,8 @@ function exportExcel() {
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   ws['!cols'] = [
     { wch: 18 }, { wch: 10 }, { wch: 10 }, { wch: 8 },
-    { wch: 16 }, { wch: 16 }, { wch: 28 }, { wch: 20 },
+    { wch: 30 }, { wch: 22 }, { wch: 18 },
+    { wch: 16 }, { wch: 28 }, { wch: 20 },
     { wch: 10 }, { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 18 }, { wch: 18 }
   ];
 
