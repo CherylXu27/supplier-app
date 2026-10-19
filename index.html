@@ -447,6 +447,30 @@ header .actions {
 }
 .brand-pair-hint.ok { color: #047857; }
 .brand-pair-hint.warn { color: #b45309; }
+
+/* 品牌词典自动联想下拉 */
+.brand-ac-wrap { position: relative; }
+.brand-suggest {
+  position: absolute; left: 0; right: 0; top: calc(100% + 2px);
+  z-index: 60; display: none; max-height: 232px; overflow-y: auto;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); box-shadow: 0 8px 22px rgba(0,0,0,0.12);
+}
+.brand-suggest.show { display: block; }
+.brand-suggest-item {
+  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
+  padding: 7px 10px; font-size: 13px; cursor: pointer;
+  border-bottom: 1px dashed var(--border); color: var(--text-primary);
+}
+.brand-suggest-item:last-child { border-bottom: none; }
+.brand-suggest-item.active, .brand-suggest-item:hover { background: var(--bg); }
+.brand-suggest-main { font-weight: 600; word-break: break-word; }
+.brand-suggest-sub { font-size: 12px; color: var(--text-muted); word-break: break-word; }
+.brand-suggest-tip {
+  padding: 6px 10px; font-size: 11px; color: var(--text-muted);
+  border-top: 1px solid var(--border); background: var(--bg);
+}
+
 .pending-trans-list { margin-top: 10px; }
 .pending-trans-row {
   display: flex; align-items: center; gap: 10px; padding: 6px 0;
@@ -3416,11 +3440,29 @@ function openProductLineModal(supplierId, editId) {
         <div class="modal-body">
           <div class="form-group">
             <label>品牌英文名 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（选填，可与中文名只填一个）</span></label>
-            <input type="text" id="m-pl-brand-en" value="${escAttr(bf.en)}" placeholder="如：Texas Instruments、TI" onchange="syncBrandFields('en')">
+            <div class="brand-ac-wrap">
+              <input type="text" id="m-pl-brand-en" value="${escAttr(bf.en)}" placeholder="如：Texas Instruments、TI"
+                autocomplete="off"
+                onchange="syncBrandFields('en')"
+                oninput="brandSuggestInput('en')"
+                onfocus="brandSuggestFocus('en')"
+                onblur="brandSuggestBlur()"
+                onkeydown="brandSuggestKey(event, 'en')">
+              <div class="brand-suggest" id="m-pl-brand-en-sug"></div>
+            </div>
           </div>
           <div class="form-group">
             <label>品牌中文名 <span style="font-size:11px;color:var(--text-muted);font-weight:400">（可填多个别名，用 / 或 、 分隔）</span></label>
-            <input type="text" id="m-pl-brand-zh" value="${escAttr(bf.zh.join(' / '))}" placeholder="如：德州仪器" onchange="syncBrandFields('zh')">
+            <div class="brand-ac-wrap">
+              <input type="text" id="m-pl-brand-zh" value="${escAttr(bf.zh.join(' / '))}" placeholder="如：德州仪器"
+                autocomplete="off"
+                onchange="syncBrandFields('zh')"
+                oninput="brandSuggestInput('zh')"
+                onfocus="brandSuggestFocus('zh')"
+                onblur="brandSuggestBlur()"
+                onkeydown="brandSuggestKey(event, 'zh')">
+              <div class="brand-suggest" id="m-pl-brand-zh-sug"></div>
+            </div>
             <span class="brand-pair-hint" id="m-pl-brand-hint">&#x1F4A1; 填好后另一语言会自动从词典补齐；词典没收录的不会乱翻译，会提示你手动补，保存后记入本地词库。</span>
           </div>
           <div class="form-group">
@@ -3474,6 +3516,164 @@ function syncBrandFields(from) {
       hint.className = 'brand-pair-hint warn';
       hint.textContent = '\u26A0 词典未收录该品牌，不会自动翻译。手动补齐另一种语言后保存，会自动记入你的本地词库，下次同一品牌无论写中英文都能自动配对。';
     }
+  }
+}
+
+/* ---- 品牌词典自动联想（录入产品线时的下拉补全） ----
+   - 两个输入框都支持：英文全称 / 缩写 / 中文名 / 别名 任意写法模糊命中
+   - 点选候选 → 英文名填英文框、中文名（含别名）填中文框，自动配对
+   - 只读词典，不写数据；查不到就正常手输，保存时仍走原有 syncBrandToDict 落库去重
+*/
+let brandSuggestState = { field: '', items: [], active: -1 };
+
+// 候选行 → { head: 'Texas Instruments（德州仪器）', tail: 'TI、TXN' }
+function brandSuggestLabel(r) {
+  const row = r || {};
+  const zh = (row.zh || []).slice();
+  const alias = (row.alias || []).slice();
+  let head = '';
+  if (row.en) {
+    head = row.en + (zh.length ? '（' + zh.join('、') + '）' : '');
+    // 英文名在，中文已并入 head
+  } else if (zh.length) {
+    head = zh.shift();                 // 只有中文时，首个中文当主名
+  }
+  const tails = [];
+  if (zh.length) tails.push(zh.join('、'));      // 没英文时剩下的中文别名
+  if (alias.length) tails.push(alias.join('、'));
+  return { head: head, tail: tails.join(' / ') };
+}
+
+// 模糊匹配：完全相等 > 归一化相等 > 前缀 > 包含
+function brandSuggestMatch(q) {
+  const raw = String(q == null ? '' : q).trim().toLowerCase();
+  const nq = normBrandName(q);
+  if (!raw && !nq) return [];
+
+  const scored = [];
+  getBrandDictRows().forEach(r => {
+    const names = [r.en].concat(r.zh || [], r.alias || []).filter(Boolean);
+    let score = 0;
+    for (let i = 0; i < names.length; i++) {
+      const ln = String(names[i]).toLowerCase();
+      const nn = normBrandName(names[i]);
+      if (!ln && !nn) continue;
+      if (raw && ln === raw) score = Math.max(score, 100);
+      else if (nq && nn === nq) score = Math.max(score, 95);
+      else if (raw && ln.indexOf(raw) === 0) score = Math.max(score, 80);
+      else if (nq && nn.indexOf(nq) === 0) score = Math.max(score, 70);
+      else if (raw && ln.indexOf(raw) > 0) score = Math.max(score, 50);
+      else if (nq && nn.indexOf(nq) > 0) score = Math.max(score, 40);
+    }
+    if (score > 0) scored.push({ row: r, score: score });
+  });
+
+  scored.sort((a, b) => b.score - a.score
+    || String(a.row.en || a.row.zh[0] || '').localeCompare(String(b.row.en || b.row.zh[0] || ''), 'en'));
+  return scored.slice(0, 8).map(x => x.row);
+}
+
+function brandSuggestBox(field) {
+  return document.getElementById('m-pl-brand-' + field + '-sug');
+}
+
+function renderBrandSuggest(field, items) {
+  const box = brandSuggestBox(field);
+  if (!box) return;
+  brandSuggestState = { field: field, items: items || [], active: (items && items.length) ? 0 : -1 };
+  if (!items || !items.length) {
+    box.innerHTML = '';
+    box.classList.remove('show');
+    return;
+  }
+  box.innerHTML = items.map((r, i) => {
+    const lb = brandSuggestLabel(r);
+    return `<div class="brand-suggest-item${i === 0 ? ' active' : ''}" data-i="${i}"
+        onmousedown="event.preventDefault();brandSuggestPick(${i})">
+        <span class="brand-suggest-main">${escHtml(lb.head)}</span>
+        ${lb.tail ? `<span class="brand-suggest-sub">/ ${escHtml(lb.tail)}</span>` : ''}
+      </div>`;
+  }).join('') + `<div class="brand-suggest-tip">↑↓ 选择 · Enter 填入 · Esc 关闭</div>`;
+  box.classList.add('show');
+}
+
+function brandSuggestInput(field) {
+  const el = document.getElementById('m-pl-brand-' + field);
+  if (!el) return;
+  renderBrandSuggest(field, brandSuggestMatch(el.value));
+}
+
+function brandSuggestFocus(field) {
+  const el = document.getElementById('m-pl-brand-' + field);
+  if (!el) return;
+  const v = String(el.value || '').trim();
+  if (!v) { hideBrandSuggest(); return; }            // 空框不弹，免得一开弹窗就挡住
+  renderBrandSuggest(field, brandSuggestMatch(v));
+}
+
+function brandSuggestBlur() {
+  setTimeout(hideBrandSuggest, 120);                 // 留时间给点选的 mousedown
+}
+
+function hideBrandSuggest() {
+  ['en', 'zh'].forEach(f => {
+    const b = brandSuggestBox(f);
+    if (b) { b.innerHTML = ''; b.classList.remove('show'); }
+  });
+  brandSuggestState = { field: '', items: [], active: -1 };
+}
+
+// 点选候选 → 双语一起回填
+function brandSuggestPick(i) {
+  const items = brandSuggestState.items || [];
+  const r = items[i];
+  if (!r) return;
+
+  const enEl = document.getElementById('m-pl-brand-en');
+  const zhEl = document.getElementById('m-pl-brand-zh');
+  if (enEl && r.en) enEl.value = r.en;
+  if (zhEl && (r.zh || []).length) zhEl.value = r.zh.join(' / ');
+
+  const lb = brandSuggestLabel(r);
+  hideBrandSuggest();
+
+  // 沿用原有提示位，告诉用户已关联到词典里的哪一条（保存后不会重复建条）
+  const hint = document.getElementById('m-pl-brand-hint');
+  if (hint) {
+    hint.className = 'brand-pair-hint ok';
+    if (!r.en) {
+      hint.textContent = '\u2705 已关联词典品牌「' + lb.head + '」，该词条还缺英文名，可自行补上；补了会记回词典。';
+    } else if (!(r.zh || []).length) {
+      hint.textContent = '\u2705 已关联词典品牌「' + lb.head + '」，该词条还缺中文名，可自行补上；补了会记回词典。';
+    } else {
+      hint.textContent = '\u2705 已关联词典品牌「' + lb.head + '」，保存后不会重复建词条。';
+    }
+  }
+}
+
+function brandSuggestKey(e, field) {
+  const items = brandSuggestState.items || [];
+  const n = items.length;
+  if (!n) return;
+
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+    e.preventDefault();
+    let a = brandSuggestState.active;
+    a = (e.key === 'ArrowDown') ? (a + 1) % n : (a - 1 + n) % n;
+    brandSuggestState.active = a;
+    const box = brandSuggestBox(field);
+    if (box && box.children) {
+      for (let i = 0; i < box.children.length; i++) {
+        const c = box.children[i];
+        if (!c || !c.classList) continue;
+        if (i === a) c.classList.add('active'); else c.classList.remove('active');
+      }
+    }
+  } else if (e.key === 'Enter') {
+    e.preventDefault();                              // 有候选时回车=选中，不误触提交
+    brandSuggestPick(brandSuggestState.active >= 0 ? brandSuggestState.active : 0);
+  } else if (e.key === 'Escape') {
+    hideBrandSuggest();
   }
 }
 
