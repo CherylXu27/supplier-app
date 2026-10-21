@@ -608,6 +608,41 @@ mark.hl-mark.hl-active {
   .hl-nav { right: 12px; left: 12px; bottom: 74px; justify-content: center; }
 }
 
+/* ===== 字母索引条 + 顶部/底部悬浮按钮 ===== */
+#az-bar {
+  position: fixed; z-index: 140; display: none;
+  flex-direction: column; align-items: stretch;
+  padding: 5px 3px; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(15,23,42,.10);
+  user-select: none;
+}
+#az-bar.show { display: flex; }
+#az-bar span {
+  font-size: 9px; line-height: 12px; text-align: center;
+  color: var(--text-muted); cursor: pointer; border-radius: 4px; padding: 0 3px;
+}
+#az-bar span:hover { background: var(--bg); color: var(--text-primary); }
+#az-bar span.has { color: var(--text-primary); font-weight: 700; }
+#az-bar span.cur { background: var(--primary); color: #fff; }
+#scroll-btns {
+  position: fixed; right: 22px; bottom: 70px; z-index: 145;
+  display: none; flex-direction: column; gap: 6px;
+  opacity: 0.55; transition: opacity 0.15s;
+}
+#scroll-btns.show { display: flex; }
+#scroll-btns:hover { opacity: 1; }
+#scroll-btns button {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text-secondary); font-size: 14px; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(15,23,42,.12);
+}
+#scroll-btns button:hover { color: var(--primary); border-color: var(--primary); }
+@media (max-width: 768px) {
+  #scroll-btns { right: 12px; bottom: 130px; }
+}
+
 /* ===== 品牌词典管理 ===== */
 .dict-wrap { max-width: 1000px; }
 .dict-toolbar {
@@ -1392,6 +1427,11 @@ mark.hl-mark.hl-active {
 
 <div id="modal-container"></div>
 <div id="hl-nav" class="hl-nav"></div>
+<div id="az-bar"></div>
+<div id="scroll-btns">
+  <button onclick="azToTop()" title="回到顶部">&#x21E7;</button>
+  <button onclick="azToBottom()" title="到底部">&#x21E9;</button>
+</div>
 <div id="toast-container"></div>
 
 <script>
@@ -2336,6 +2376,8 @@ function renderAll() {
   }
   // 重绘会丢掉 <mark>，这里补回来（保持当前停在第几条，不抢滚动位置）
   if (typeof hlApply === 'function') hlApply(null, { keepIndex: true, noScroll: true });
+  // 刷新字母索引条 / 快速滚动按钮（切到别的页签时自动隐藏）
+  if (typeof azRender === 'function') azRender();
 }
 
 function renderStats() {
@@ -2752,6 +2794,206 @@ document.addEventListener('keydown', function (e) {
   else if (e.key === 'Escape') { e.preventDefault(); hlReset(); }
 });
 
+/* ===== 字母索引条 + 顶部/底部悬浮按钮（品牌词典 / 产品线反查的长列表） =====
+   - 不改列表模板内容，只在行元素上加 data-az="A-Z/#" 标记首字母
+   - 品牌词典：滚动容器 #main-content，行 .dict-row（按英文名/首中文名排序）
+   - 产品线反查：滚动容器与列表同为 #supplier-list，行 .supplier-item（品牌展示名）
+   - 中文/数字/符号开头 → 归入 '#'；点字母平滑滚动，没有该字母时跳最近可用字母
+*/
+let azState = { container: null, listEl: null, itemSel: '', letters: [] };
+
+function azLetterOf(name) {
+  const s = String(name || '').trim();
+  if (!s) return '#';
+  const ch = s.charAt(0).toUpperCase();
+  return (ch >= 'A' && ch <= 'Z') ? ch : '#';
+}
+
+// 当前页签对应的索引上下文；其余页签返回 null（索引条隐藏）
+function azContext() {
+  if (currentView === 'brand') {
+    const list = document.getElementById('dict-rows');
+    return list ? { container: document.getElementById('main-content'), listEl: list, itemSel: '.dict-row' } : null;
+  }
+  if (currentView === 'product') {
+    const list = document.getElementById('supplier-list');
+    return list ? { container: list, listEl: list, itemSel: '.supplier-item' } : null;
+  }
+  return null;
+}
+
+function azItems() {
+  return (azState.listEl && azState.listEl.querySelectorAll) ? azState.listEl.querySelectorAll(azState.itemSel) : [];
+}
+
+// 没有目标字母时找最近可用字母：距离优先向后，再向前，环形查找
+function azNearestLetter(L, present) {
+  const order = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+  const i0 = order.indexOf(L);
+  if (i0 < 0) return present.length ? present[0] : '';
+  for (let d = 1; d < order.length; d++) {
+    for (const off of [d, -d]) {
+      const cand = order[(i0 + off + order.length * 2) % order.length];
+      if (present.indexOf(cand) >= 0) return cand;
+    }
+  }
+  return present.length ? present[0] : '';
+}
+
+function azRender() {
+  const bar = document.getElementById('az-bar');
+  if (!bar) return;
+  const btns = document.getElementById('scroll-btns');
+  const ctx = azContext();
+  const items = ctx ? ctx.listEl.querySelectorAll(ctx.itemSel) : [];
+  if (!ctx || !items.length) {
+    bar.className = ''; bar.innerHTML = '';
+    if (btns) btns.className = '';
+    azState = { container: null, listEl: null, itemSel: '', letters: [] };
+    return;
+  }
+
+  azState = { container: ctx.container, listEl: ctx.listEl, itemSel: ctx.itemSel, letters: [] };
+  Array.prototype.forEach.call(items, it => {
+    const L = (it.getAttribute && it.getAttribute('data-az')) || '#';
+    if (azState.letters.indexOf(L) < 0) azState.letters.push(L);
+  });
+
+  const cur = azCurrentLetter();
+  const all = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ#'.split('');
+  bar.innerHTML = all.map(L =>
+    `<span data-l="${L}" class="${azState.letters.indexOf(L) >= 0 ? 'has' : ''}${cur === L ? ' cur' : ''}">${L}</span>`
+  ).join('');
+  bar.className = 'show';
+  azPosition(bar, ctx.listEl);
+  azUpdateBtns();
+}
+
+// 把索引条摆到列表右侧（fixed 定位，按列表当前矩形计算；太靠窗口边就收进列表内）
+function azPosition(bar, listEl) {
+  const W = (typeof window !== 'undefined' && window.innerWidth) || 1024;
+  const H = (typeof window !== 'undefined' && window.innerHeight) || 768;
+  const r = listEl.getBoundingClientRect();
+  const barH = 27 * 13 + 12;
+  bar.style.top = Math.max(70, Math.min(r.top + 12, H - barH - 90)) + 'px';
+  bar.style.left = (r.right + 36 > W ? r.right - 26 : r.right + 6) + 'px';
+}
+
+function azCurrentLetter() {
+  if (!azState.container || !azState.listEl) return '';
+  const items = azItems();
+  if (!items.length) return '';
+  const cRect = azState.container.getBoundingClientRect();
+  let cur = '';
+  Array.prototype.forEach.call(items, it => {
+    const r = it.getBoundingClientRect();
+    if (r.top - cRect.top <= 90) cur = (it.getAttribute && it.getAttribute('data-az')) || '#';
+  });
+  return cur;
+}
+
+function azJump(L) {
+  const items = azItems();
+  if (!items.length || !azState.container) return;
+  let target = null;
+  Array.prototype.forEach.call(items, it => {
+    if (!target && ((it.getAttribute && it.getAttribute('data-az')) || '#') === L) target = it;
+  });
+  if (!target) {
+    const near = azNearestLetter(L, azState.letters);
+    if (near) {
+      Array.prototype.forEach.call(items, it => {
+        if (!target && ((it.getAttribute && it.getAttribute('data-az')) || '#') === near) target = it;
+      });
+    }
+  }
+  if (!target) return;
+  const delta = target.getBoundingClientRect().top - azState.container.getBoundingClientRect().top;
+  const el = azState.container;
+  if (el.scrollBy) el.scrollBy({ top: delta - 14, behavior: 'smooth' });
+  else el.scrollTop += delta - 14;
+  azScheduleRefresh();
+}
+
+function azToTop() {
+  const el = azState.container;
+  if (!el) return;
+  if (el.scrollTo) el.scrollTo({ top: 0, behavior: 'smooth' });
+  else el.scrollTop = 0;
+  azScheduleRefresh();
+}
+
+function azToBottom() {
+  const el = azState.container;
+  if (!el) return;
+  const t = Math.max(0, el.scrollHeight - el.clientHeight);
+  if (el.scrollTo) el.scrollTo({ top: t, behavior: 'smooth' });
+  else el.scrollTop = t;
+  azScheduleRefresh();
+}
+
+function azUpdateBtns() {
+  const btns = document.getElementById('scroll-btns');
+  const el = azState.container;
+  if (!btns) return;
+  if (!el) { btns.className = ''; return; }
+  const max = el.scrollHeight - el.clientHeight;
+  const showUp = el.scrollTop > 80;
+  const showDown = el.scrollTop < max - 80;
+  btns.className = (showUp || showDown) ? 'show' : '';
+  if (btns.children && btns.children.length) {
+    if (btns.children[0]) btns.children[0].style.display = showUp ? '' : 'none';
+    if (btns.children[1]) btns.children[1].style.display = showDown ? '' : 'none';
+  }
+}
+
+let azRafId = 0;
+function azScheduleRefresh() {
+  const run = () => { azRafId = 0; azRefreshCur(); };
+  if (typeof requestAnimationFrame === 'function') {
+    if (!azRafId) azRafId = requestAnimationFrame(run);
+    // 平滑滚动过程中持续刷新当前字母高亮
+    if (typeof setTimeout === 'function') setTimeout(run, 380);
+  } else {
+    run();
+  }
+}
+
+function azRefreshCur() {
+  const bar = document.getElementById('az-bar');
+  if (!bar || !azState.container) return;
+  const cur = azCurrentLetter();
+  const spans = bar.querySelectorAll ? bar.querySelectorAll('span') : [];
+  Array.prototype.forEach.call(spans, sp => {
+    if (sp.classList) sp.classList.toggle('cur', (sp.getAttribute && sp.getAttribute('data-l')) === cur);
+  });
+  azUpdateBtns();
+}
+
+// 滚动时更新当前字母高亮与按钮显隐（capture 才能监听到内部容器的 scroll）
+document.addEventListener('scroll', function (e) {
+  if (!azState.container || !e || e.target !== azState.container) return;
+  azRefreshCur();
+}, true);
+
+// 点击字母跳转（事件委托，索引条重画也不用重绑事件）
+document.addEventListener('click', function (e) {
+  let el = e && e.target;
+  while (el && el !== document.body) {
+    if (el.id === 'az-bar') return;
+    if (el.getAttribute && el.getAttribute('data-l') && el.parentNode && el.parentNode.id === 'az-bar') {
+      azJump(el.getAttribute('data-l'));
+      return;
+    }
+    el = el.parentNode;
+  }
+});
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('resize', function () { if (typeof azRender === 'function') azRender(); });
+}
+
+
 function getTopBrands(limit) {
   const brandCount = {};   // 实体键 → { count, display, terms:Set }
   appData.suppliers.forEach(s => {
@@ -2883,6 +3125,7 @@ function renderProductLineList() {
     container.innerHTML = q
       ? `<div class="empty-section">无匹配结果<br><span style="font-weight:400;font-size:12px;color:var(--text-muted)">没有产品线符合「${escHtml(q)}」</span></div>`
       : '<div class="empty-section">暂无匹配的产品线</div>';
+    if (typeof azRender === 'function') azRender();
     return;
   }
 
@@ -2890,7 +3133,7 @@ function renderProductLineList() {
     const supCount = l.suppliers.length;
     const selected = selectedProductKey === l.key ? 'selected' : '';
     return `
-      <div class="supplier-item ${selected}" onclick="selectProductLine('${escAttr(l.key)}')">
+      <div class="supplier-item ${selected}" data-az="${azLetterOf(l.brand || l.displayKey)}" onclick="selectProductLine('${escAttr(l.key)}')">
         <div class="info">
           <div class="name">${escHtml(joinBrandLine(l))}</div>
           <div class="meta">
@@ -5739,6 +5982,8 @@ function renderBrandDictView() {
         </div>
       </div>
 
+      <div class="detail-card" id="dict-pending-card"></div>
+
       <div class="detail-card">
         <div class="card-header">
           <h3>词条列表</h3>
@@ -5758,8 +6003,6 @@ function renderBrandDictView() {
         </div>
         <div id="dict-rows"></div>
       </div>
-
-      <div class="detail-card" id="dict-pending-card"></div>
     </div>
   `;
 
@@ -5830,7 +6073,7 @@ function renderDictRows() {
     const canDelete = r.source !== 'builtin';
     const delTitle = r.source === 'override' ? '恢复内置词条' : '删除词条';
     return `
-      <div class="dict-row">
+      <div class="dict-row" data-az="${azLetterOf(r.en || (r.zh && r.zh[0]) || '')}">
         <div class="dict-en">${r.en ? escHtml(r.en) : '<span class="dict-miss">待补英文名</span>'}</div>
         <div class="dict-zh">${r.zh.length ? escHtml(r.zh.join('、')) : '<span class="dict-miss">待补中文名</span>'}</div>
         <div class="dict-alias">${r.alias.length ? escHtml(r.alias.join('、')) : '—'}</div>
