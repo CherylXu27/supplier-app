@@ -289,6 +289,20 @@ header .actions {
 .supplier-item .meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
 .supplier-item .counts { font-size: 11px; color: var(--text-muted); text-align: right; white-space: nowrap; }
 
+/* 搜索结果：命中原因（明确告诉是哪一栏匹配上的，只在有搜索词时出现） */
+.supplier-item .hit-why {
+  margin-top: 4px; display: flex; flex-wrap: wrap; gap: 3px 8px; align-items: center;
+}
+.supplier-item .hit-pair { display: inline-flex; align-items: center; gap: 3px; min-width: 0; max-width: 100%; }
+.supplier-item .hit-field {
+  flex-shrink: 0; padding: 0 4px; border-radius: 3px; font-size: 10px; line-height: 15px;
+  background: var(--bg); border: 1px solid var(--border); color: var(--text-muted);
+}
+.supplier-item .hit-text {
+  font-size: 11px; color: var(--text-secondary);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 148px;
+}
+
 .status-dot {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
@@ -2456,28 +2470,149 @@ function setFilter(key) {
   if (isMobile()) updateBottomNav();
 }
 
-function getFilteredSuppliers() {
-  const query = (document.getElementById('search-input').value || '').toLowerCase().trim();
+/* ===== 供应商视角：全字段模糊搜索 =====
+   - 覆盖：公司名 / 类型 / 状态 / 地区 / 地址 / 备注 / 创建时间 / 更新时间 /
+           联系人（姓名·职位·电话·微信·邮箱·备注）/ 品牌（中英文·别名）/ 产品线 / 系列 / 产品线备注
+   - 只参与「筛选 + 命中原因提示」，不改列表结构、排序、筛选页签，也不改其他页签的搜索行为
+   - 英文大小写不敏感；多个关键词用空格分隔，必须全部命中（AND）
+*/
+function supplierSearchTerms(raw) {
+  return String(raw == null ? '' : raw).toLowerCase().split(/\s+/).map(t => t.trim()).filter(Boolean);
+}
+
+// 时间字段的可搜文本：原始值 + 本地 YYYY-MM-DD HH:mm + YYYY/MM/DD，几种写法都能搜
+function supplierDateText(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  const d = new Date(s);
+  if (isNaN(d.getTime())) return s;
+  const p2 = n => (n < 10 ? '0' : '') + n;
+  const ymd = d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate());
+  return [s, ymd, ymd.replace(/-/g, '/'), ymd + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes())].join(' ');
+}
+
+// 一条供应商摊平成可搜字段列表；label 用于提示「是哪一栏命中的」
+function supplierSearchFields(s) {
+  const sup = s || {};
+  const out = [];
+  const add = (label, val) => {
+    const v = String(val == null ? '' : val).trim();
+    if (v) out.push({ label: label, value: v });
+  };
+
+  add('公司名', sup.name);
+  add('类型', TYPE_MAP[sup.type] || sup.type);
+  if (sup.type && TYPE_MAP[sup.type]) add('类型', sup.type);
+  add('状态', (STATUS_MAP[sup.status] || {}).label || sup.status);
+  if (sup.status && STATUS_MAP[sup.status]) add('状态', sup.status);
+  add('地区', sup.region);
+  add('地址', sup.address);
+  add('备注', sup.remark);
+  add('创建时间', supplierDateText(sup.createdAt));
+  add('更新时间', supplierDateText(sup.updatedAt));
+
+  (Array.isArray(sup.contacts) ? sup.contacts : []).forEach(c => {
+    if (!c) return;
+    add('联系人', c.name);
+    add('职位', c.position);
+    add('电话', c.phone);
+    add('微信', c.wechat);
+    add('邮箱', c.email);
+    add('联系人备注', c.remark);
+  });
+
+  (Array.isArray(sup.productLines) ? sup.productLines : []).forEach(pl => {
+    if (!pl) return;
+    const f = brandFieldsOf(pl);
+    add('品牌', f.en);
+    f.zh.forEach(z => add('品牌', z));
+    add('品牌', pl.brand);                       // 原始写法兜底（老数据）
+    const idx = getBrandIndex();
+    [f.en].concat(f.zh).forEach(n => {
+      const h = n ? idx[normBrandName(n)] : null;
+      if (h) (h.alias || []).forEach(a => add('品牌别名', a));
+    });
+    add('产品线', pl.lineName);
+    add('系列', pl.mainSeries);
+    add('产品线备注', pl.remark);
+  });
+
+  return out;
+}
+
+// 命中判定：每个关键词都要在某一栏里出现，返回命中的字段与位置（用于提示和高亮）
+function supplierMatchInfo(s, terms) {
+  const list = Array.isArray(terms) ? terms : supplierSearchTerms(terms);
+  if (!list.length) return { ok: true, hits: [] };
+
+  const fields = supplierSearchFields(s).map(f => ({
+    label: f.label, value: f.value, low: f.value.toLowerCase()
+  }));
+
+  const hits = [];
+  for (let i = 0; i < list.length; i++) {
+    const t = list[i];
+    let best = null;
+    for (let j = 0; j < fields.length; j++) {
+      const f = fields[j];
+      const at = f.low.indexOf(t);
+      if (at < 0) continue;
+      // 同一关键词命中多栏时取最短的那栏（公司名/品牌名这类短字段信息量最大）
+      if (!best || f.value.length < best.value.length) {
+        best = { term: t, label: f.label, value: f.value, at: at, len: t.length };
+      }
+    }
+    if (!best) return { ok: false, hits: [] };     // 多关键词 → 必须同时满足
+    hits.push(best);
+  }
+  return { ok: true, hits: hits };
+}
+
+// 命中处前后各留一点上下文，太长就省略（高亮交给 hlApply 统一处理）
+function supplierHitSnippet(hit) {
+  const v = String((hit && hit.value) || '');
+  const at = Math.max(0, (hit && hit.at) || 0);
+  const len = (hit && hit.len) || 0;
+  const pad = 14;
+  const from = Math.max(0, at - pad);
+  const to = Math.min(v.length, at + len + pad);
+  return (from > 0 ? '…' : '') + v.slice(from, to) + (to < v.length ? '…' : '');
+}
+
+function supplierHitLineHtml(hits) {
+  if (!hits || !hits.length) return '';
+  const MAX = 2;
+  const shown = hits.slice(0, MAX).map(h =>
+    '<span class="hit-pair"><span class="hit-field">' + escHtml(h.label) + '</span>' +
+    '<span class="hit-text">' + escHtml(supplierHitSnippet(h)) + '</span></span>'
+  );
+  const rest = hits.length - shown.length;
+  if (rest > 0) shown.push('<span class="hit-pair"><span class="hit-field">还有 ' + rest + ' 处</span></span>');
+  return '<div class="hit-why">' + shown.join('') + '</div>';
+}
+
+// 一次算完：筛选后的列表 + 每个供应商的命中信息（避免重复遍历）
+function supplierSearchResult() {
+  const el = document.getElementById('search-input');
+  const raw = el ? String(el.value || '') : '';
+  const terms = supplierSearchTerms(raw);
+
   let list = appData.suppliers;
-  if (currentFilter !== 'all') {
-    list = list.filter(s => s.status === currentFilter);
+  if (currentFilter !== 'all') list = list.filter(s => s.status === currentFilter);
+
+  const hitsById = {};
+  if (terms.length) {
+    list = list.filter(s => {
+      const m = supplierMatchInfo(s, terms);
+      if (m.ok) hitsById[s.id] = m.hits;
+      return m.ok;
+    });
   }
-  if (query) {
-    list = list.filter(s =>
-      s.name.toLowerCase().includes(query) ||
-      s.region.toLowerCase().includes(query) ||
-      s.productLines.some(pl =>
-        brandSearchBlob(pl).includes(query) ||
-        pl.lineName.toLowerCase().includes(query) ||
-        pl.mainSeries.toLowerCase().includes(query)
-      ) ||
-      s.contacts.some(c =>
-        c.name.toLowerCase().includes(query) ||
-        c.phone.includes(query)
-      )
-    );
-  }
-  return list;
+  return { terms: terms, list: list, hitsById: hitsById, active: terms.length > 0 };
+}
+
+function getFilteredSuppliers() {
+  return supplierSearchResult().list;
 }
 
 function renderSupplierList() {
@@ -2485,7 +2620,8 @@ function renderSupplierList() {
     renderProductLineList();
     return;
   }
-  const list = getFilteredSuppliers();
+  const res = supplierSearchResult();
+  const list = res.list;
   const container = document.getElementById('supplier-list');
 
   if (list.length === 0) {
@@ -2496,11 +2632,17 @@ function renderSupplierList() {
     return;
   }
 
+  // 搜索把当前选中的供应商筛掉了 → 右栏跟随到第一个命中项，保证左右一致
+  if (res.active && selectedSupplierId && !list.some(s => s.id === selectedSupplierId)) {
+    selectedSupplierId = list[0].id;
+  }
+
   container.innerHTML = list.map(s => {
     const st = STATUS_MAP[s.status];
     const plCount = s.productLines.length;
     const ctCount = s.contacts.length;
     const selected = s.id === selectedSupplierId ? 'selected' : '';
+    const hitHtml = res.active ? supplierHitLineHtml(res.hitsById[s.id]) : '';
     return `
       <div class="supplier-item ${selected}" onclick="selectSupplier('${s.id}')">
         <div class="status-dot ${st.dot}"></div>
@@ -2510,6 +2652,7 @@ function renderSupplierList() {
             <span class="${st.cls}">${st.label}</span>
             ${s.region ? `<span>${escHtml(s.region)}</span>` : ''}
           </div>
+          ${hitHtml}
         </div>
         <div class="counts">${plCount}产品线<br>${ctCount}联系人</div>
       </div>
@@ -2603,22 +2746,46 @@ function handleSearch() {
 */
 let hlState = { query: '', marks: [], index: 0 };
 
-// 把一段文字按关键词切成 [普通段, 命中段, 普通段...]，大小写不敏感
+// 关键词拆词：空格分隔的多个词都要标亮（与供应商视角的多词筛选保持同一口径）
+function hlTermsOf(q) {
+  return String(q == null ? '' : q).trim().toLowerCase().split(/\s+/).filter(Boolean);
+}
+
+// 把一段文字按关键词切成 [普通段, 命中段, 普通段...]，大小写不敏感，支持多词
 function hlSplitRanges(text, q) {
   const src = String(text == null ? '' : text);
-  const key = String(q == null ? '' : q);
-  if (!src || !key) return [{ text: src, hit: false }];
+  const terms = hlTermsOf(q);
+  if (!src || !terms.length) return [{ text: src, hit: false }];
   const lower = src.toLowerCase();
-  const k = key.toLowerCase();
+
+  // 先收集所有命中区间，再合并重叠部分（多词相邻/包含时不重复包 mark）
+  const ranges = [];
+  terms.forEach(t => {
+    let from = 0;
+    let hit = lower.indexOf(t, from);
+    while (hit >= 0) {
+      ranges.push([hit, hit + t.length]);
+      from = hit + t.length;
+      hit = lower.indexOf(t, from);
+    }
+  });
+  if (!ranges.length) return [{ text: src, hit: false }];
+
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged = [];
+  ranges.forEach(r => {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else merged.push([r[0], r[1]]);
+  });
+
   const out = [];
   let from = 0;
-  let hit = lower.indexOf(k, from);
-  while (hit >= 0) {
-    if (hit > from) out.push({ text: src.slice(from, hit), hit: false });
-    out.push({ text: src.slice(hit, hit + k.length), hit: true });
-    from = hit + k.length;
-    hit = lower.indexOf(k, from);
-  }
+  merged.forEach(r => {
+    if (r[0] > from) out.push({ text: src.slice(from, r[0]), hit: false });
+    out.push({ text: src.slice(r[0], r[1]), hit: true });
+    from = r[1];
+  });
   if (from < src.length) out.push({ text: src.slice(from), hit: false });
   return out.length ? out : [{ text: src, hit: false }];
 }
