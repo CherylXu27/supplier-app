@@ -684,7 +684,7 @@ mark.hl-mark.hl-active {
 .dict-badges { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
 .dict-actions { display: flex; gap: 2px; justify-content: flex-end; }
 
-/* 初始化词典 · 预览弹窗 */
+/* 导入已录入品牌 · 预览弹窗 */
 .dict-import-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 8px; margin: 12px 0 4px; }
 .dict-import-stat { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px; background: var(--bg); }
 .dict-import-stat b { display: block; font-size: 17px; font-weight: 600; color: var(--text-primary); line-height: 1.35; }
@@ -697,21 +697,43 @@ mark.hl-mark.hl-active {
 }
 .dict-import-list { max-height: 260px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
 .dict-import-row {
-  display: grid; grid-template-columns: 1.2fr 1.2fr 1fr 88px; gap: 8px;
+  display: grid; grid-template-columns: 20px 1.1fr 1.1fr 0.9fr 1fr 84px; gap: 8px;
   padding: 6px 10px; font-size: 12px; border-bottom: 1px dashed var(--border); align-items: center;
 }
 .dict-import-row:last-child { border-bottom: none; }
-.dict-import-row.skip { grid-template-columns: 0.9fr 1fr 1fr 1.4fr; }
+.dict-import-row.skip { grid-template-columns: 0.9fr 1fr 1fr 1.4fr; padding-left: 38px; }
+.dict-import-row.picked { background: rgba(37, 99, 235, 0.05); }
+.dict-import-row .ck { display: flex; align-items: center; justify-content: center; }
+.dict-import-row .ck input { width: 14px; height: 14px; margin: 0; cursor: pointer; accent-color: #2563eb; }
 .dict-import-row .nm { font-weight: 600; color: var(--text-primary); word-break: break-word; }
 .dict-import-row.skip .nm { font-weight: 400; }
 .dict-import-row .zs { color: var(--text-primary); word-break: break-word; }
 .dict-import-row .as { color: var(--text-muted); word-break: break-word; }
+.dict-import-row .sup { color: var(--text-secondary); font-size: 11px; line-height: 1.45; word-break: break-word; }
 .dict-import-row .why { color: #b45309; word-break: break-word; }
+.dict-import-summary {
+  border: 1px solid #bae6fd; background: #eff6ff; color: #075985;
+  border-radius: var(--radius-sm); padding: 8px 12px; margin: 12px 0 0;
+  font-size: 12.5px; line-height: 1.7;
+}
+.dict-import-summary b { color: #0c4a6e; }
+.dict-import-bulk { display: flex; gap: 8px; align-items: center; }
+.dict-import-bulk label {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+  color: var(--text-secondary); cursor: pointer; user-select: none;
+}
+.dict-import-bulk input { width: 13px; height: 13px; margin: 0; cursor: pointer; accent-color: #2563eb; }
+.dict-import-confirm-big { font-size: 22px; font-weight: 600; color: var(--text-primary); line-height: 1.5; margin: 4px 0 2px; }
 .dict-empty { padding: 40px 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
 @media (max-width: 768px) {
   .dict-head, .dict-row { grid-template-columns: 1.3fr 1fr 70px 60px; padding: 8px 12px; gap: 8px; }
   .dict-head span:nth-child(3), .dict-row > :nth-child(3) { display: none; }
   .dict-search { min-width: 140px; }
+  .dict-import-row:not(.skip) { grid-template-columns: 20px 1fr 1fr 70px; }
+  .dict-import-row:not(.skip) > :nth-child(4),
+  .dict-import-row:not(.skip) > :nth-child(5) { display: none; }
+  .dict-import-row.skip { grid-template-columns: 1fr 1fr; padding-left: 12px; row-gap: 2px; }
+  .dict-import-row.skip .as { display: none; }
 }
 
 /* Dashboard */
@@ -5992,7 +6014,7 @@ function renderBrandDictView() {
             placeholder="搜索英文名 / 中文名 / 别名..."
             oninput="onDictSearch(this.value)" />
           <button class="btn btn-sm btn-primary" onclick="openBrandDictModal('')">＋ 新增品牌</button>
-          <button class="btn btn-sm" onclick="openBrandImportPreview()" title="把当前所有供应商名下已录入的品牌一次性收进词典（先预览，确认后才写入）">&#x21E9; 初始化词典</button>
+          <button class="btn btn-sm" onclick="openBrandImportPreview()" title="扫描所有供应商名下已录入的品牌，勾选后导入词典（先预览，二次确认后才写入）">&#x21E9; 导入已录入品牌</button>
           <button class="btn btn-sm" onclick="exportBrandDict()">导出词典</button>
         </div>
         <div class="dict-filters" id="dict-filters"></div>
@@ -6261,7 +6283,7 @@ function renderDictPendingCard() {
       <div class="card-body">
         <div class="batch-hint" style="margin-top:0">
           扫一遍已录入的产品线和词典本身，把还没收进词典的品牌挑出来。已配好双语的点一次「保存」直接收进词典；只差另一种语言的填上即可，以后录入同一品牌（写英文或中文都行）自动配对。<br>
-          &#x1F449; 要把全部已录入品牌一次性收进词典（不用逐条确认），用上方工具栏的「&#x21E9; 初始化词典」。
+          &#x1F449; 要把全部已录入品牌一次性收进词典，用上方工具栏的「&#x21E9; 导入已录入品牌」（可勾选、先预览再确认）。
         </div>
         <div class="batch-actions">
           <button class="btn btn-primary" onclick="scanDictPending()">&#x1F50D; 扫描已录入品牌</button>
@@ -6311,7 +6333,7 @@ function renderDictPendingCard() {
         <button class="btn" onclick="dictPending=null;renderDictPendingCard()">收起</button>
       </div>
       <div class="batch-hint">已显示双语的品牌不用填，直接点保存就能收进词典；留空的会跳过，绝不自作主张翻译。<br>
-      &#x1F449; 要把全部已录入品牌一次性收进词典，用上方工具栏的「&#x21E9; 初始化词典」。</div>
+      &#x1F449; 要把全部已录入品牌一次性收进词典，用上方工具栏的「&#x21E9; 导入已录入品牌」（可勾选、先预览再确认）。</div>
     </div>`;
 }
 
@@ -6507,22 +6529,11 @@ function buildBrandImportPlan() {
     g.needEn = !g.en;
     g.needZh = !g.zh.length;
     g.review = g.reasons.length > 0;
+    g.checked = true;                                   // 默认全选，用户可逐条取消
+    g.supplierNames = unionNames(g.sources.map(s => s.supplier));
   });
 
-  // 用真实合并规则空跑一遍，预演「会新增几条」，不改动任何数据
-  // 以词典「可见行数」为准：改写内置词条只是补充，不算新增一条品牌
-  const dictBackup = JSON.parse(JSON.stringify(Array.isArray(appData.brandDict) ? appData.brandDict : []));
-  let willAdd = 0, willMerge = 0;
-  try {
-    groups.forEach(g => {
-      const before = getBrandDictRows().length;
-      const changed = syncBrandToDict({ en: g.en, zh: g.zh, alias: g.alias });
-      if (getBrandDictRows().length > before) willAdd++;
-      else if (changed) willMerge++;
-    });
-  } catch (e) { /* 预演失败不影响真实统计 */ }
-  appData.brandDict = dictBackup;
-  invalidateBrandIndex();
+  const st = dryRunBrandImport(groups);
 
   return {
     supplierCount: scan.supplierCount,
@@ -6533,12 +6544,36 @@ function buildBrandImportPlan() {
     duplicates: scan.recs.length - groups.length,
     pendingTrans: groups.filter(g => g.needEn || g.needZh).length,
     review: groups.filter(g => g.review).length,
-    willAdd: willAdd,
-    willMerge: willMerge
+    willAdd: st.willAdd,
+    willMerge: st.willMerge
   };
 }
 
-// 打开预览（只统计，不写数据）
+// 用真实合并规则空跑一遍，预演「会新增几条 / 补充几条」，全程不改动任何数据
+// 以词典「可见行数」为准：改写内置词条只是补充，不算新增一条品牌
+function dryRunBrandImport(groups) {
+  const list = Array.isArray(groups) ? groups : [];
+  const dictBackup = JSON.parse(JSON.stringify(Array.isArray(appData.brandDict) ? appData.brandDict : []));
+  let willAdd = 0, willMerge = 0;
+  list.forEach(g => {
+    try {
+      const before = getBrandDictRows().length;
+      const changed = syncBrandToDict({ en: g.en, zh: g.zh, alias: g.alias });
+      if (getBrandDictRows().length > before) willAdd++;
+      else if (changed) willMerge++;
+    } catch (e) { /* 单条预演失败只影响它自己的计数 */ }
+  });
+  appData.brandDict = dictBackup;
+  invalidateBrandIndex();
+  return { willAdd: willAdd, willMerge: willMerge };
+}
+
+/* ---- 导入已录入品牌：入口 → 勾选预览 → 二次确认 → 写入 --------------------
+   只读遍历 appData.suppliers，绝不修改供应商 / 产品线 / 品牌归属；
+   写入复用 syncBrandToDict，去重合并规则与日常自动同步完全一致。
+--------------------------------------------------------------------------- */
+
+// 打开预览（只扫描统计，不写数据）
 function openBrandImportPreview() {
   let plan;
   try {
@@ -6548,23 +6583,20 @@ function openBrandImportPreview() {
     return;
   }
   brandImportPlan = plan;
+  renderBrandImportPreview();
+}
 
-  const stat = (n, label, warn) =>
-    `<div class="dict-import-stat${warn ? ' warn' : ''}"><b>${n}</b><span>${label}</span></div>`;
+// 已勾选的品牌实体
+function brandImportPicked() {
+  const plan = brandImportPlan;
+  if (!plan || !plan.groups) return [];
+  return plan.groups.filter(g => g.checked);
+}
 
-  const groupRows = plan.groups.slice(0, 300).map(g => {
-    const marks = [];
-    if (g.needEn) marks.push('<span class="dict-badge over">待补英文名</span>');
-    if (g.needZh) marks.push('<span class="dict-badge over">待补中文名</span>');
-    if (g.review) marks.push('<span class="dict-badge review">待核对</span>');
-    return `
-      <div class="dict-import-row">
-        <div class="nm">${g.en ? escHtml(g.en) : '<span class="dict-miss">待补英文名</span>'}</div>
-        <div class="zs">${g.zh.length ? escHtml(g.zh.join('、')) : '<span class="dict-miss">待补中文名</span>'}</div>
-        <div class="as">${g.alias.length ? escHtml(g.alias.join('、')) : '—'}</div>
-        <div><span class="dict-hit">${g.records} 条</span>${marks.join(' ')}</div>
-      </div>`;
-  }).join('');
+// 预览弹窗骨架（统计与清单由下面两个函数填，勾选时只局部刷新，不整页重绘）
+function renderBrandImportPreview() {
+  const plan = brandImportPlan;
+  if (!plan) { showToast('没有可导入的内容，请重新扫描', 'error'); return; }
 
   const skipRows = plan.skipped.length ? plan.skipped.slice(0, 300).map(x => `
       <div class="dict-import-row skip">
@@ -6576,34 +6608,29 @@ function openBrandImportPreview() {
 
   document.getElementById('modal-container').innerHTML = `
     <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
-      <div class="modal" style="max-width:780px">
+      <div class="modal" style="max-width:880px">
         <div class="modal-header">
-          <h3>初始化词典 · 预览</h3>
+          <h3>导入已录入品牌 · 预览</h3>
           <button class="btn-icon" onclick="closeModal()">&#x2715;</button>
         </div>
         <div class="modal-body" style="max-height:66vh;overflow:auto">
           <div class="batch-hint" style="margin-top:0">
-            把 ${plan.supplierCount} 家供应商名下已录入的品牌一次性收进词典。
-            <b>这一步只往词典里灌数据</b>，不会改动、删除或移动任何公司名下的品牌归属。
-            下面只是统计结果，点「确认写入」才会真正保存。
+            扫描了 ${plan.supplierCount} 家供应商名下已录入的品牌。
+            <b>导入只是把品牌同步进词典</b>，不会删除、移动或改变任何公司名下原本挂着的品牌。
+            只有下面勾选的才会写入，取消勾选的不动。
           </div>
 
-          <div class="dict-import-stats">
-            ${stat(plan.scanned, '扫描到品牌记录')}
-            ${stat(plan.unique, '按实体合并后')}
-            ${stat(plan.duplicates, '去掉重复')}
-            ${stat(plan.willAdd, '预计新增词条')}
-            ${stat(plan.willMerge, '补充已有词条')}
-            ${stat(plan.pendingTrans, '待补译名', plan.pendingTrans > 0)}
-            ${stat(plan.review, '待核对', plan.review > 0)}
-            ${stat(plan.skipped.length, '未收录', plan.skipped.length > 0)}
-          </div>
+          <div class="dict-import-summary" id="dict-import-summary"></div>
+          <div class="dict-import-stats" id="dict-import-stats"></div>
 
           <div class="dict-import-sec">
-            <h4>合并后的词条清单
-              <span class="dict-hit">${plan.unique} 条${plan.groups.length > 300 ? '（只显示前 300 条）' : ''}</span>
+            <h4>待导入清单
+              <span class="dict-hit" id="dict-import-list-count"></span>
+              <span class="dict-import-bulk" style="margin-left:auto">
+                <label><input type="checkbox" id="dict-import-all" checked onchange="toggleAllBrandImport(this.checked)"> 全选</label>
+              </span>
             </h4>
-            <div class="dict-import-list">${groupRows || '<div class="dict-empty">没有扫描到可收录的品牌</div>'}</div>
+            <div class="dict-import-list" id="dict-import-list"></div>
           </div>
 
           ${plan.skipped.length ? `
@@ -6622,19 +6649,203 @@ function openBrandImportPreview() {
         </div>
         <div class="modal-footer">
           <button class="btn" onclick="closeModal()">取消</button>
-          <button class="btn btn-primary" onclick="confirmBrandImport()">确认写入词典（${plan.willAdd} 新增 / ${plan.willMerge} 补充）</button>
+          <button class="btn btn-primary" id="dict-import-confirm" onclick="openBrandImportConfirm()">下一步</button>
+        </div>
+      </div>`;
+
+  renderBrandImportList();
+  refreshBrandImportStats();
+}
+
+// 待导入清单（每条前带勾选框，默认全选）
+function renderBrandImportList() {
+  const plan = brandImportPlan;
+  const box = document.getElementById('dict-import-list');
+  if (!plan || !box) return;
+  if (!plan.groups.length) {
+    box.innerHTML = '<div class="dict-empty">没有扫描到可收录的品牌</div>';
+    return;
+  }
+  const rows = plan.groups.slice(0, 300).map((g, i) => {
+    const marks = [];
+    if (g.needEn) marks.push('<span class="dict-badge over">待补英文名</span>');
+    if (g.needZh) marks.push('<span class="dict-badge over">待补中文名</span>');
+    if (g.review) marks.push('<span class="dict-badge review" title="' + escAttr((g.reasons || []).join('；')) + '">待核对</span>');
+    return `
+      <div class="dict-import-row${g.checked ? ' picked' : ''}">
+        <div class="ck"><input type="checkbox" data-i="${i}"${g.checked ? ' checked' : ''} onchange="onBrandImportCheck(this)"></div>
+        <div class="nm">${g.en ? escHtml(g.en) : '<span class="dict-miss">待补英文名</span>'}</div>
+        <div class="zs">${g.zh.length ? escHtml(g.zh.join('、')) : '<span class="dict-miss">待补中文名</span>'}</div>
+        <div class="as">${g.alias.length ? escHtml(g.alias.join('、')) : '—'}</div>
+        <div class="sup" title="${escAttr((g.supplierNames || []).join('、'))}">${escHtml(brandImportSupText(g))}</div>
+        <div><span class="dict-hit">${g.records} 条</span>${marks.join(' ')}</div>
+      </div>`;
+  }).join('');
+
+  box.innerHTML = rows + (plan.groups.length > 300
+    ? `<div class="dict-empty">只列出前 300 条，其余 ${plan.groups.length - 300} 条同样按勾选状态处理</div>`
+    : '');
+}
+
+// 所属供应商：最多列 2 家，其余折成「等 N 家」
+function brandImportSupText(g) {
+  const sups = (g && g.supplierNames) || [];
+  if (!sups.length) return '—';
+  if (sups.length <= 2) return sups.join('、');
+  return sups.slice(0, 2).join('、') + ' 等 ' + sups.length + ' 家';
+}
+
+// 勾选变化：只更新这条 + 重算统计
+function onBrandImportCheck(el) {
+  const plan = brandImportPlan;
+  if (!plan || !el) return;
+  const i = parseInt(el.getAttribute('data-i'), 10);
+  const g = plan.groups[i];
+  if (!g) return;
+  g.checked = !!el.checked;
+  const row = el.closest ? el.closest('.dict-import-row') : null;
+  if (row && row.classList) row.classList.toggle('picked', g.checked);
+  refreshBrandImportStats();
+}
+
+// 全选 / 全不选（作用于全部实体，不止前 300 条）
+function toggleAllBrandImport(on) {
+  const plan = brandImportPlan;
+  if (!plan || !plan.groups) return;
+  plan.groups.forEach(g => { g.checked = !!on; });
+  renderBrandImportList();
+  refreshBrandImportStats();
+}
+
+// 重算并刷新统计（勾选任意变化都会走这里）
+function refreshBrandImportStats() {
+  const plan = brandImportPlan;
+  if (!plan || !plan.groups) return { picked: [], willAdd: 0, willMerge: 0 };
+
+  const picked = plan.groups.filter(g => g.checked);
+  const pickedRecords = picked.reduce((n, g) => n + (g.records || 0), 0);
+  const st = dryRunBrandImport(picked);          // 空跑真实合并规则算准新增/补充，不改数据
+  plan.selAdd = st.willAdd;
+  plan.selMerge = st.willMerge;
+
+  const stat = (n, label, warn) =>
+    `<div class="dict-import-stat${warn ? ' warn' : ''}"><b>${n}</b><span>${label}</span></div>`;
+
+  const sum = document.getElementById('dict-import-summary');
+  if (sum) {
+    sum.innerHTML = picked.length
+      ? `共扫描到 <b>${plan.scanned}</b> 条品牌记录，按品牌实体合并后 <b>${plan.unique}</b> 条；`
+        + `已勾选 <b>${picked.length}</b> 条（覆盖 ${pickedRecords} 条记录），`
+        + `导入后预计新增 <b>${st.willAdd}</b> 条词条、补充 <b>${st.willMerge}</b> 条已有词条。`
+      : `共扫描到 <b>${plan.scanned}</b> 条品牌记录，按品牌实体合并后 <b>${plan.unique}</b> 条；当前一条都没勾选。`;
+  }
+
+  const box = document.getElementById('dict-import-stats');
+  if (box) {
+    box.innerHTML =
+      stat(plan.scanned, '扫描到品牌记录')
+      + stat(plan.unique, '按实体合并后')
+      + stat(plan.duplicates, '去掉重复')
+      + stat(picked.length, '已勾选', !picked.length)
+      + stat(st.willAdd, '预计新增词条')
+      + stat(st.willMerge, '补充已有词条')
+      + stat(picked.filter(g => g.needEn || g.needZh).length, '待补译名', picked.some(g => g.needEn || g.needZh))
+      + stat(picked.filter(g => g.review).length, '待核对', picked.some(g => g.review))
+      + stat(plan.skipped.length, '未收录', plan.skipped.length > 0);
+  }
+
+  const cnt = document.getElementById('dict-import-list-count');
+  if (cnt) cnt.textContent = `${picked.length} / ${plan.unique} 条已勾选`;
+
+  const all = document.getElementById('dict-import-all');
+  if (all) {
+    all.checked = plan.groups.length > 0 && picked.length === plan.groups.length;
+    all.indeterminate = picked.length > 0 && picked.length < plan.groups.length;
+  }
+
+  const btn = document.getElementById('dict-import-confirm');
+  if (btn) {
+    btn.textContent = picked.length ? `下一步：导入 ${picked.length} 条 →` : '请先勾选品牌';
+    btn.disabled = !picked.length;
+  }
+
+  return { picked: picked, willAdd: st.willAdd, willMerge: st.willMerge };
+}
+
+// 二次确认窗：大字条数 + 本次清单，确认后才落库
+function openBrandImportConfirm() {
+  const plan = brandImportPlan;
+  if (!plan || !plan.groups) { showToast('没有可导入的内容，请重新扫描', 'error'); return; }
+  const picked = plan.groups.filter(g => g.checked);
+  if (!picked.length) { showToast('请至少勾选一条品牌', 'error'); return; }
+
+  const st = dryRunBrandImport(picked);
+  const reviewCount = picked.filter(g => g.review).length;
+  const pendingCount = picked.filter(g => g.needEn || g.needZh).length;
+
+  const rows = picked.slice(0, 300).map(g => {
+    const marks = [];
+    if (g.needEn) marks.push('<span class="dict-badge over">待补英文名</span>');
+    if (g.needZh) marks.push('<span class="dict-badge over">待补中文名</span>');
+    if (g.review) marks.push('<span class="dict-badge review">待核对</span>');
+    return `
+      <div class="dict-import-row" style="grid-template-columns:1.1fr 1.1fr 0.9fr 1fr 92px">
+        <div class="nm">${g.en ? escHtml(g.en) : '<span class="dict-miss">待补英文名</span>'}</div>
+        <div class="zs">${g.zh.length ? escHtml(g.zh.join('、')) : '<span class="dict-miss">待补中文名</span>'}</div>
+        <div class="as">${g.alias.length ? escHtml(g.alias.join('、')) : '—'}</div>
+        <div class="sup">${escHtml(brandImportSupText(g))}</div>
+        <div>${marks.join(' ')}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('modal-container').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeBrandImportConfirm()">
+      <div class="modal" style="max-width:820px">
+        <div class="modal-header">
+          <h3>最后确认一遍</h3>
+          <button class="btn-icon" onclick="closeBrandImportConfirm()">&#x2715;</button>
+        </div>
+        <div class="modal-body" style="max-height:64vh;overflow:auto">
+          <div class="batch-hint" style="margin-top:0">即将写入品牌词典：</div>
+          <div class="dict-import-confirm-big">${picked.length} 条品牌词条</div>
+          <div class="batch-hint">
+            预计新增 ${st.willAdd} 条、补充 ${st.willMerge} 条已有词条。
+            <b>只写入词典，不会改动各公司名下已录入的品牌。</b>
+            ${reviewCount ? `<br>其中 ${reviewCount} 条标为「待核对」，会照常收录并打上标记，之后可逐个确认。` : ''}
+            ${pendingCount ? `<br>其中 ${pendingCount} 条只有单一语言，缺的一边留空归入「待补译名」。` : ''}
+            ${plan.skipped.length ? `<br>另有 ${plan.skipped.length} 条未收录（格式异常或空名），本次跳过。` : ''}
+          </div>
+
+          <div class="dict-import-sec">
+            <h4>本次将写入的清单
+              <span class="dict-hit">${picked.length} 条${picked.length > 300 ? '（只显示前 300 条）' : ''}</span>
+            </h4>
+            <div class="dict-import-list">${rows || '<div class="dict-empty">没有可写入的品牌</div>'}</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeBrandImportConfirm()">← 返回修改</button>
+          <button class="btn btn-primary" onclick="confirmBrandImport()">最终确认，写入 ${picked.length} 条</button>
         </div>
       </div>
     </div>`;
 }
 
-// 确认后真正写入
+// 从二次确认返回预览（勾选状态存在 brandImportPlan.groups[].checked，原样恢复）
+function closeBrandImportConfirm() {
+  if (!brandImportPlan) { closeModal(); return; }
+  renderBrandImportPreview();
+}
+
+// 最终确认后真正写入（只写勾选的）
 function confirmBrandImport() {
   const plan = brandImportPlan;
   if (!plan || !plan.groups) { showToast('没有可导入的内容，请重新扫描', 'error'); return; }
+  const picked = plan.groups.filter(g => g.checked);
+  if (!picked.length) { showToast('请至少勾选一条品牌', 'error'); return; }
 
   let added = 0, merged = 0, failed = 0;
-  plan.groups.forEach(g => {
+  picked.forEach(g => {
     try {
       const before = getBrandDictRows().length;
       const changed = syncBrandToDict({ en: g.en, zh: g.zh, alias: g.alias });
@@ -6647,7 +6858,7 @@ function confirmBrandImport() {
 
   // 写入后再给「待核对」的词条打标记，方便之后逐个确认
   let reviewMarked = 0;
-  plan.groups.forEach(g => {
+  picked.forEach(g => {
     if (!g.review) return;
     if (markDictEntryReview(g, g.reasons)) reviewMarked++;
   });
