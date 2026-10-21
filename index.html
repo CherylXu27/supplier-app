@@ -5982,8 +5982,6 @@ function renderBrandDictView() {
         </div>
       </div>
 
-      <div class="detail-card" id="dict-pending-card"></div>
-
       <div class="detail-card">
         <div class="card-header">
           <h3>词条列表</h3>
@@ -6003,6 +6001,8 @@ function renderBrandDictView() {
         </div>
         <div id="dict-rows"></div>
       </div>
+
+      <div class="detail-card" id="dict-pending-card"></div>
     </div>
   `;
 
@@ -6260,7 +6260,8 @@ function renderDictPendingCard() {
       <div class="card-header"><h3>&#x2462; 待补译名</h3></div>
       <div class="card-body">
         <div class="batch-hint" style="margin-top:0">
-          扫一遍已录入的产品线和词典本身，把还没配上双语（只有中文或只有英文）的品牌挑出来。补上另一种语言后写进词典，以后录入同一品牌（写英文或中文都行）自动配对。
+          扫一遍已录入的产品线和词典本身，把还没收进词典的品牌挑出来。已配好双语的点一次「保存」直接收进词典；只差另一种语言的填上即可，以后录入同一品牌（写英文或中文都行）自动配对。<br>
+          &#x1F449; 要把全部已录入品牌一次性收进词典（不用逐条确认），用上方工具栏的「&#x21E9; 初始化词典」。
         </div>
         <div class="batch-actions">
           <button class="btn btn-primary" onclick="scanDictPending()">&#x1F50D; 扫描已录入品牌</button>
@@ -6286,12 +6287,14 @@ function renderDictPendingCard() {
 
   const rows = dictPending.map((p, i) => {
     const needZh = !!p.en;
-    const shown = p.en || p.zh.join('、');
+    const hasBoth = needZh && p.zh.length;   // 双语都已有、只是还没收进词典 → 预填，保存即导入
+    const shown = p.en ? p.en + (p.zh.length ? '（' + p.zh.join('、') + '）' : '') : p.zh.join('、');
     return `
       <div class="pending-trans-row">
         <span class="pending-trans-name">${escHtml(shown)}${p.count ? `<span class="dict-hit">${p.count} 条</span>` : ''}</span>
         <input type="text" id="dict-fill-${i}"
-          placeholder="${needZh ? '填写中文名，多个用、分隔' : '填写英文名'}" />
+          value="${hasBoth ? escAttr(p.zh.join('、')) : ''}"
+          placeholder="${hasBoth ? '双语已齐，点下方「保存」直接收进词典' : (needZh ? '填写中文名，多个用、分隔' : '填写英文名')}" />
       </div>`;
   }).join('');
 
@@ -6307,7 +6310,8 @@ function renderDictPendingCard() {
         <button class="btn" onclick="scanDictPending()">重新扫描</button>
         <button class="btn" onclick="dictPending=null;renderDictPendingCard()">收起</button>
       </div>
-      <div class="batch-hint">留空的会跳过，绝不自作主张翻译。</div>
+      <div class="batch-hint">已显示双语的品牌不用填，直接点保存就能收进词典；留空的会跳过，绝不自作主张翻译。<br>
+      &#x1F449; 要把全部已录入品牌一次性收进词典，用上方工具栏的「&#x21E9; 初始化词典」。</div>
     </div>`;
 }
 
