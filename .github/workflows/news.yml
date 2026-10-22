@@ -1,1 +1,43 @@
+name: 每日更新芯片资讯
+
+on:
+  schedule:
+    # GitHub Actions 使用 UTC 时间；00:00 UTC = 北京时间 08:00
+    # 注意：GitHub 的定时任务在高峰期可能延迟几分钟到十几分钟触发
+    - cron: '0 0 * * *'
+  workflow_dispatch:        # 支持在 Actions 页面手动点一下立即跑
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 准备 Node 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 抓取国内芯片 / 代理商资讯
+        run: node scripts/fetch-news.mjs
+
+      - name: 提交 news.json
+        run: |
+          if [ ! -f news.json ]; then
+            echo "未生成 news.json，保留上一次的数据"
+            exit 0
+          fi
+          git config user.name "news-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add news.json
+          if git diff --staged --quiet; then
+            echo "本次抓取内容与上次一致，无需提交"
+          else
+            git commit -m "chore(news): 更新资讯 $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
 
