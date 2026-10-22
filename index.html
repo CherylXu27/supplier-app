@@ -865,6 +865,73 @@ mark.hl-mark.hl-active {
   display: flex; align-items: center; gap: 4px;
 }
 
+/* 资讯：缓存/失败提示条 + 摘要 */
+.news-stale-bar {
+  margin: -2px 0 8px; padding: 5px 8px; border-radius: 4px;
+  background: #FFFBEB; border: 1px solid #FDE68A; color: #B45309;
+  font-size: 11px; line-height: 1.4;
+}
+.news-desc {
+  font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.5;
+}
+
+/* ===== 原厂授权代理推荐 ===== */
+.vendor-rec { border-top: 1px solid var(--border); background: #FAFBFC; }
+.vr-head {
+  display: flex; align-items: center; gap: 8px; padding: 10px 16px 6px;
+}
+.vr-title { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.vr-select {
+  flex: 1; min-width: 0; font-size: 12px; padding: 3px 6px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text);
+}
+.vr-edit-btn {
+  font-size: 11px; padding: 3px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+  border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+}
+.vr-edit-btn:hover { border-color: var(--primary); color: var(--primary); }
+.vr-body { padding: 0 16px 12px; }
+.vr-agents { display: flex; flex-wrap: wrap; gap: 6px; }
+.vr-agent {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--border); font-size: 11px; max-width: 100%;
+}
+.vr-agent b { font-weight: 500; color: var(--text); }
+.vr-agent i { font-style: normal; color: var(--text-muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-agent.is-custom { border-color: var(--primary); }
+.vr-flag { font-style: normal; font-size: 9px; padding: 0 4px; border-radius: 3px; white-space: nowrap; }
+.vr-flag.official { background: #ECFDF5; color: #059669; }
+.vr-flag.public { background: #FFFBEB; color: #D97706; }
+.vr-flag.custom { background: var(--primary-light); color: var(--primary); }
+.vr-note { font-size: 11px; color: var(--text-muted); margin-top: 8px; line-height: 1.5; }
+.vr-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; font-size: 11px; }
+.vr-src { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-foot a { color: var(--primary); text-decoration: none; white-space: nowrap; }
+.vr-foot a:hover { text-decoration: underline; }
+.vr-empty { font-size: 11px; color: var(--text-muted); line-height: 1.5; }
+
+.vr-modal-tip { font-size: 11px; color: var(--text-muted); line-height: 1.55; margin-bottom: 10px; }
+.vr-rows { max-height: 320px; overflow-y: auto; }
+.vr-row {
+  display: flex; align-items: center; gap: 6px; padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.vr-row:last-child { border-bottom: none; }
+.vr-row.is-removed { opacity: .45; }
+.vr-row-main { flex: 1; display: flex; gap: 6px; min-width: 0; }
+.vr-row-main input { flex: 1; min-width: 0; font-size: 12px; padding: 4px 6px; }
+.vr-row-main input[readonly] { background: var(--bg); color: var(--text-secondary); }
+.vr-row-tag {
+  font-size: 9px; padding: 1px 4px; border-radius: 3px; white-space: nowrap;
+  background: var(--bg); color: var(--text-muted); border: 1px solid var(--border);
+}
+.vr-add { display: flex; gap: 6px; margin-top: 12px; }
+.vr-add input { flex: 1; min-width: 0; font-size: 12px; padding: 5px 7px; }
+@media (max-width: 768px) {
+  .vr-row-main { flex-direction: column; }
+  .vr-add { flex-direction: column; }
+}
+
 .detail-header {
   display: flex;
   align-items: flex-start;
@@ -2031,6 +2098,9 @@ function mergeBrandDictBeforeOverwrite(incoming) {
 function ensureAppDataShape() {  if (!appData || typeof appData !== 'object') appData = { version: '1.0', suppliers: [] };
   if (!Array.isArray(appData.suppliers)) appData.suppliers = [];
   if (!Array.isArray(appData.brandDict)) appData.brandDict = [];
+  // 原厂 → 推荐代理商：用户自定义覆盖项 + 被手动隐藏的内置项
+  if (!appData.vendorAgents || typeof appData.vendorAgents !== 'object' || Array.isArray(appData.vendorAgents)) appData.vendorAgents = {};
+  if (!appData.vendorAgentHidden || typeof appData.vendorAgentHidden !== 'object' || Array.isArray(appData.vendorAgentHidden)) appData.vendorAgentHidden = {};
   appData.suppliers.forEach(s => {
     if (!Array.isArray(s.productLines)) s.productLines = [];
     if (!Array.isArray(s.contacts)) s.contacts = [];
@@ -3630,21 +3700,31 @@ function renderMain() {
   `;
 }
 
-/* ===== Real-time News System ===== */
-const NEWS_FEEDS = {
-  chip: 'https://news.google.com/rss/search?q=' + encodeURIComponent('芯片 OR 半导体 OR semiconductor OR 集成电路 OR 晶圆 OR 光刻') + '&hl=zh-CN&gl=CN&ceid=CN:zh-Hans',
-  world: 'https://news.google.com/rss/search?q=' + encodeURIComponent('国际新闻 OR 自然灾害 OR 地震 OR 洪水 OR 台风 OR natural disaster OR 海啸') + '&hl=zh-CN&gl=CN&ceid=CN:zh-Hans',
-  agent: 'https://news.google.com/rss/search?q=' + encodeURIComponent('电子元器件 代理商 OR 分销商 OR 文晔 OR 大联大 OR Arrow OR Avnet OR 中电港 OR 华强 OR 力源') + '&hl=zh-CN&gl=CN&ceid=CN:zh-Hans'
-};
+/* ===== 首页资讯系统（国内源 / 每日自动更新 / 失败降级缓存） =====
+   数据链路（三层，逐层降级）：
+   1) 同域 news.json —— 由 GitHub Actions 每天北京时间 08:00 抓取生成，无跨域问题、最快
+   2) 直接抓国内源 —— news.json 不存在或过期时，经 CORS 代理直连（较慢，作为兜底）
+   3) 本地缓存 / 内置样例 —— 全部失败时展示上次成功抓取的内容，并明确提示
+   数据源全部为国内可直接访问的站点：国际电子商情、集微网、电子工程专辑、
+   东方财富、华尔街见闻、文晔科技、大联大
+*/
+const NEWS_JSON_URL = 'news.json';
+const NEWS_CACHE_KEY = 'news_cache_v4';
+const NEWS_AUTO_HOUR = 8;              // 每天 8 点后首次打开时自动更新
+const NEWS_FRESH_HOURS = 12;           // news.json 超过这个时长视为过期，尝试直连刷新
 
-// Multiple CORS proxy fallbacks
 const CORS_PROXIES = [
   url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
-  url => 'https://corsproxy.io/?url=' + encodeURIComponent(url),
-  url => 'https://api.codetabs.com/v1/proxy/?url=' + encodeURIComponent(url)
+  url => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(url)
 ];
 
-let newsCache = { chipNews: null, agentNews: null, lastUpdate: null, loading: false };
+let newsCache = {
+  chipNews: null, agentNews: null, loading: false,
+  updatedAt: null,        // 数据生成时间（Date）
+  status: 'idle',         // idle | ok | stale | seed
+  error: '',
+  sources: []
+};
 let newsRefreshTimer = null;
 
 function extractNewsSource(url) {
@@ -3666,6 +3746,25 @@ function formatNewsTime(dateStr) {
   if (diff < 86400) return Math.floor(diff / 3600) + '小时前';
   if (diff < 604800) return Math.floor(diff / 86400) + '天前';
   return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+}
+
+function newsP2(n) { return (n < 10 ? '0' : '') + n; }
+
+// 列表里显示的「日期」：MM-DD（同一年的更紧凑）
+function fmtNewsDate(d) {
+  const t = d instanceof Date ? d : new Date(d);
+  if (!t || isNaN(t.getTime())) return '';
+  const now = new Date();
+  const md = newsP2(t.getMonth() + 1) + '-' + newsP2(t.getDate());
+  return t.getFullYear() === now.getFullYear() ? md : t.getFullYear() + '-' + md;
+}
+
+// 更新时间：YYYY-MM-DD HH:mm
+function fmtNewsDateTime(d) {
+  const t = d instanceof Date ? d : new Date(d);
+  if (!t || isNaN(t.getTime())) return '';
+  return t.getFullYear() + '-' + newsP2(t.getMonth() + 1) + '-' + newsP2(t.getDate()) +
+    ' ' + newsP2(t.getHours()) + ':' + newsP2(t.getMinutes());
 }
 
 function stripNewsHtml(str) {
@@ -3712,119 +3811,235 @@ function parseRssXml(xmlText, maxItems) {
   return results;
 }
 
-async function fetchNewsFeed(feedUrl, maxItems) {
-  // Try each CORS proxy until one works
-  for (let i = 0; i < CORS_PROXIES.length; i++) {
-    try {
-      const proxyUrl = CORS_PROXIES[i](feedUrl);
-      // Create a new controller per attempt
-      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
-      const timeoutId = controller ? setTimeout(() => controller.abort(), 12000) : null;
-      const resp = await fetch(proxyUrl, controller ? { signal: controller.signal } : {});
-      if (timeoutId) clearTimeout(timeoutId);
-      if (!resp.ok) continue;
-      const text = await resp.text();
-      if (!text || text.length < 50) continue;
-      const items = parseRssXml(text, maxItems || 8);
-      if (items.length > 0) return items;
-    } catch (e) {
-      // Try next proxy
-      continue;
-    }
-  }
-  // All proxies failed, try rss2json as last resort
-  try {
-    const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl) + '&count=' + (maxItems || 8);
-    const resp = await fetch(apiUrl);
-    const data = await resp.json();
-    if (data.status === 'ok' && data.items && data.items.length) {
-      return data.items.slice(0, maxItems || 8).map(item => {
-        const cat = categorizeNews(item.title || '');
-        return {
-          title: stripNewsHtml(item.title) || '(无标题)',
-          url: item.link || '#',
-          source: item.author || extractNewsSource(item.link),
-          time: formatNewsTime(item.pubDate),
-          desc: stripNewsHtml(item.description).slice(0, 140),
-          tag: cat.tag, tagLabel: cat.tagLabel
-        };
-      });
-    }
-  } catch (e) { /* give up */ }
-  throw new Error('All proxies failed');
+/* ---- 资讯抓取：同域 news.json → 直连国内源 → 本地缓存 → 内置样例 ---- */
+
+function newsWithTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const timer = setTimeout(() => { if (!done) { done = true; reject(new Error('timeout')); } }, ms);
+    promise.then(v => { if (!done) { done = true; clearTimeout(timer); resolve(v); } },
+      e => { if (!done) { done = true; clearTimeout(timer); reject(e); } });
+  });
 }
 
-async function loadDashboardNews() {
+// 规范化一条新闻，兼容 news.json 与直连兜底两种来源
+function normalizeNewsItem(it) {
+  if (!it || !it.title) return null;
+  const url = String(it.url || '').trim();
+  if (!/^https?:\/\//.test(url)) return null;
+  const ts = it.publishedAt ? new Date(it.publishedAt) : null;
+  const ok = ts && !isNaN(ts.getTime());
+  return {
+    title: String(it.title).trim(),
+    summary: String(it.summary || it.desc || '').trim(),
+    url: url,
+    source: String(it.source || '网络').trim(),
+    publishedAt: ok ? ts.toISOString() : '',
+    dateText: ok ? fmtNewsDate(ts) : '',
+    timeText: ok ? formatNewsTime(ts) : '',
+    tag: it.tag || 'market',
+    tagLabel: it.tagLabel || '行业资讯',
+    kind: it.kind || ''
+  };
+}
+
+// 统一整理成前端用的两条列表
+function normalizeNewsPayload(raw) {
+  const chip = (Array.isArray(raw && raw.chip) ? raw.chip : []).map(normalizeNewsItem).filter(Boolean);
+  const agent = (Array.isArray(raw && raw.agent) ? raw.agent : []).map(normalizeNewsItem).filter(Boolean);
+  const gen = raw && (raw.generatedAt || raw.generatedAtBeijing);
+  const ts = gen ? new Date(gen) : null;
+  return {
+    chip: chip,
+    agent: agent,
+    updatedAt: (ts && !isNaN(ts.getTime())) ? ts : new Date(),
+    sources: Array.isArray(raw && raw.sources) ? raw.sources : []
+  };
+}
+
+// 1) 同域 news.json
+async function loadNewsFromJson() {
+  const url = NEWS_JSON_URL + '?v=' + Date.now();
+  const resp = await newsWithTimeout(fetch(url, { cache: 'no-store' }), 8000);
+  if (!resp.ok) throw new Error('news.json HTTP ' + resp.status);
+  const raw = await resp.json();
+  const pack = normalizeNewsPayload(raw);
+  if (!pack.chip.length && !pack.agent.length) throw new Error('news.json 内容为空');
+  return pack;
+}
+
+// 直连兜底：东方财富快讯 JSON
+function parseEastmoneyJson(data) {
+  const list = (data && data.data && data.data.fastNewsList) || [];
+  return list.map(it => ({
+    title: String(it.title || '').replace(/\s+/g, ' ').trim(),
+    summary: String(it.summary || '').slice(0, 160),
+    url: it.code ? 'https://finance.eastmoney.com/a/' + it.code + '.html' : '',
+    source: '东方财富',
+    publishedAt: it.showTime ? new Date(String(it.showTime).replace(' ', 'T') + '+08:00').toISOString() : '',
+    tag: 'chip', tagLabel: '芯片产业'
+  })).filter(x => x.title && x.url);
+}
+
+// 直连兜底：华尔街见闻快讯 JSON
+function parseWscnJson(data) {
+  const items = (data && data.data && data.data.items) || [];
+  return items.map(it => ({
+    title: String(it.title || '').trim() || String(it.content_text || '').slice(0, 40),
+    summary: String(it.content_text || '').slice(0, 160),
+    url: it.uri || (it.id ? 'https://wallstreetcn.com/livenews/' + it.id : ''),
+    source: '华尔街见闻',
+    publishedAt: it.display_time ? new Date(it.display_time * 1000).toISOString() : '',
+    tag: 'market', tagLabel: '行业资讯'
+  })).filter(x => x.title && x.url);
+}
+
+// 2) 直连国内源（经 CORS 代理，较慢，仅在 news.json 不可用时启用）
+async function loadNewsFromDirect() {
+  for (const api of NEWS_DIRECT_APIS) {
+    const target = api.build();
+    for (const proxy of CORS_PROXIES) {
+      try {
+        const resp = await newsWithTimeout(fetch(proxy(target)), 10000);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        const items = api.parse(data);
+        if (items.length) {
+          const chipKw = /芯片|半导体|晶圆|存储|算力|GPU|封装|光刻|代工|DRAM|NAND|HBM/i;
+          const agentKw = /文晔|大联大|世平|艾睿|安富利|中电港|华强|力源|分销商|代理商|英伟达|NVIDIA|英飞凌|恩智浦|NXP|瑞萨|高通|意法|微芯|ADI|安森美/i;
+          const chip = items.filter(x => chipKw.test(x.title + x.summary)).slice(0, 8);
+          const agent = items.filter(x => agentKw.test(x.title + x.summary)).slice(0, 10);
+          if (chip.length || agent.length) {
+            return { chip: chip, agent: agent, updatedAt: new Date(), sources: [{ name: api.name, ok: true, count: items.length }] };
+          }
+        }
+      } catch (e) { /* 换下一个代理 */ }
+    }
+  }
+  throw new Error('直连数据源均不可用');
+}
+
+// 3) 本地缓存
+function readNewsCache() {
+  try {
+    const raw = localStorage.getItem(NEWS_CACHE_KEY);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    if (!obj || (!Array.isArray(obj.chip) && !Array.isArray(obj.agent))) return null;
+    const pack = normalizeNewsPayload(obj);
+    if (!pack.chip.length && !pack.agent.length) return null;
+    return pack;
+  } catch (e) { return null; }
+}
+
+function writeNewsCache(pack) {
+  try {
+    localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({
+      chip: pack.chip, agent: pack.agent,
+      generatedAt: pack.updatedAt ? pack.updatedAt.toISOString() : '',
+      sources: pack.sources || []
+    }));
+  } catch (e) { /* 存储满不影响展示 */ }
+}
+
+// 内置样例（仅在从未成功抓取过时兜底，界面上会标注为示例数据）
+function seedNews() {
+  return {
+    chip: CHIP_NEWS.map(normalizeNewsItem).filter(Boolean),
+    agent: AGENT_NEWS.slice(0, 8).map(a => normalizeNewsItem({
+      title: a.title, url: a.url, source: a.source, summary: a.agentDesc || '',
+      publishedAt: '', tag: 'agent', tagLabel: a.agent || '代理商', kind: 'distributor'
+    })).filter(Boolean),
+    updatedAt: null,
+    sources: []
+  };
+}
+
+function applyNewsPack(pack, status) {
+  newsCache.chipNews = pack.chip;
+  newsCache.agentNews = pack.agent;
+  newsCache.updatedAt = pack.updatedAt;
+  newsCache.sources = pack.sources || [];
+  newsCache.status = status;
+}
+
+async function loadDashboardNews(opts) {
+  const force = !!(opts && opts.force);
   if (newsCache.loading) return;
   newsCache.loading = true;
+  newsCache.error = '';
+
   const chipBody = document.getElementById('chip-news-body');
   const agentBody = document.getElementById('agent-news-body');
-  if (chipBody) chipBody.innerHTML = '<div class="news-loading"><span class="spinner"></span>正在获取最新资讯...</div>';
-  if (agentBody) agentBody.innerHTML = '<div class="news-loading"><span class="spinner"></span>正在获取最新资讯...</div>';
+  const hasCache = !!(newsCache.chipNews && newsCache.chipNews.length);
+  if (!hasCache) {
+    if (chipBody) chipBody.innerHTML = '<div class="news-loading"><span class="spinner"></span>正在获取最新资讯...</div>';
+    if (agentBody) agentBody.innerHTML = '<div class="news-loading"><span class="spinner"></span>正在获取最新资讯...</div>';
+  }
 
   try {
-    const [chipResults, worldResults, agentResults] = await Promise.all([
-      fetchNewsFeed(NEWS_FEEDS.chip, 6).catch(() => null),
-      fetchNewsFeed(NEWS_FEEDS.world, 6).catch(() => null),
-      fetchNewsFeed(NEWS_FEEDS.agent, 8).catch(() => null)
-    ]);
-
-    // Merge chip + world, interleave for variety
-    const chip = chipResults || [];
-    const world = worldResults || [];
-    const merged = [];
-    const maxLen = Math.max(chip.length, world.length);
-    for (let i = 0; i < maxLen; i++) {
-      if (i < chip.length) merged.push(chip[i]);
-      if (i < world.length) merged.push(world[i]);
+    // 第一层：同域 news.json
+    let pack = null;
+    let used = 'json';
+    try {
+      pack = await loadNewsFromJson();
+    } catch (e) {
+      // 第二层：直连国内源
+      try {
+        pack = await loadNewsFromDirect();
+        used = 'direct';
+      } catch (e2) {
+        pack = null;
+      }
     }
 
-    const allFailed = !chipResults && !worldResults && !agentResults;
+    if (pack) {
+      applyNewsPack(pack, 'ok');
+      writeNewsCache(pack);
+      markNewsAttempt();
+      newsCache.loading = false;
+      renderDashboardNews();
+      updateNewsRefreshTime(false);
+      return;
+    }
 
-    if (allFailed) {
-      // All feeds failed — use static fallback
-      newsCache.chipNews = CHIP_NEWS.map(n => ({ ...n }));
-      newsCache.agentNews = AGENT_NEWS.slice(0, 8).map(a => ({
-        title: a.title, url: a.url, source: a.source, time: a.time,
-        desc: (a.agentDesc || '') + (a.agent ? ' | ' + a.agent : ''),
-        tag: 'agent', tagLabel: a.agent || '代理商'
-      }));
+    // 第三层：本地缓存
+    const cached = readNewsCache();
+    if (cached) {
+      applyNewsPack(cached, 'stale');
+      markNewsAttempt();
       newsCache.loading = false;
       renderDashboardNews();
       updateNewsRefreshTime(true);
       return;
     }
 
-    newsCache.chipNews = merged.length > 0 ? merged.slice(0, 8) : CHIP_NEWS.map(n => ({ ...n }));
-    newsCache.agentNews = (agentResults && agentResults.length > 0)
-      ? agentResults.slice(0, 8)
-      : AGENT_NEWS.slice(0, 8).map(a => ({
-          title: a.title, url: a.url, source: a.source, time: a.time,
-          desc: (a.agentDesc || '') + (a.agent ? ' | ' + a.agent : ''),
-          tag: 'agent', tagLabel: a.agent || '代理商'
-        }));
-    newsCache.lastUpdate = new Date();
+    // 第四层：内置样例（从未成功过）
+    applyNewsPack(seedNews(), 'seed');
+    markNewsAttempt();
     newsCache.loading = false;
-
     renderDashboardNews();
-    updateNewsRefreshTime();
+    updateNewsRefreshTime(true);
   } catch (e) {
     newsCache.loading = false;
-    if (!newsCache.chipNews) {
-      newsCache.chipNews = CHIP_NEWS.map(n => ({ ...n }));
-    }
-    if (!newsCache.agentNews) {
-      newsCache.agentNews = AGENT_NEWS.slice(0, 8).map(a => ({
-        title: a.title, url: a.url, source: a.source, time: a.time,
-        desc: (a.agentDesc || '') + (a.agent ? ' | ' + a.agent : ''),
-        tag: 'agent', tagLabel: a.agent || '代理商'
-      }));
-    }
+    const cached = readNewsCache();
+    if (cached) { applyNewsPack(cached, 'stale'); }
+    else if (!newsCache.chipNews) { applyNewsPack(seedNews(), 'seed'); }
     renderDashboardNews();
     updateNewsRefreshTime(true);
   }
 }
 
+// 记录「今天是否已尝试过更新」，用于每日自动更新
+function markNewsAttempt() {
+  try {
+    const d = new Date();
+    const p2 = n => (n < 10 ? '0' : '') + n;
+    localStorage.setItem('news_last_attempt', d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()));
+  } catch (e) { /* ignore */ }
+}
+
+// 资讯卡片：标题 / 摘要 / 来源 / 日期 / 原文链接（结构沿用原样式，只换数据字段）
 function renderDashboardNews() {
   const chipBody = document.getElementById('chip-news-body');
   const agentBody = document.getElementById('agent-news-body');
@@ -3832,23 +4047,28 @@ function renderDashboardNews() {
 
   const news = newsCache.chipNews || [];
   const agents = newsCache.agentNews || [];
+  const staleBar = (newsCache.status === 'stale')
+    ? `<div class="news-stale-bar">上次更新失败，展示缓存${newsCache.updatedAt ? '（缓存于 ' + escHtml(fmtNewsDateTime(newsCache.updatedAt)) + '）' : ''}</div>`
+    : (newsCache.status === 'seed'
+      ? '<div class="news-stale-bar">当前无法联网，展示内置示例数据（非最新）</div>'
+      : '');
 
   if (chipBody) {
     if (news.length === 0) {
       chipBody.innerHTML = '<div class="news-error">暂无数据，请稍后刷新</div>';
     } else {
-      chipBody.innerHTML = news.map(n => {
-        const tagCls = n.tag === 'chip' ? 'chip' : n.tag === 'market' ? 'market' : n.tag === 'policy' ? 'policy' : n.tag === 'world' ? 'policy' : 'market';
+      chipBody.innerHTML = staleBar + news.map(n => {
+        const tagCls = n.tag === 'chip' ? 'chip' : n.tag === 'market' ? 'market' : 'policy';
         return `
           <div class="news-item">
             <a class="news-title" href="${escAttr(n.url)}" target="_blank" rel="noopener" title="点击跳转原文">${escHtml(n.title)}</a>
             <div class="news-meta">
               <span class="news-tag news-tag-${tagCls}">${escHtml(n.tagLabel)}</span>
               <span class="news-source-badge">${escHtml(n.source)}</span>
-              <span>${escHtml(n.time)}</span>
+              <span title="${escAttr(n.publishedAt || '')}">${escHtml(n.dateText || n.timeText)}</span>
               <span style="margin-left:auto;font-size:11px;color:var(--primary)">&#x2197; 原文</span>
             </div>
-            ${n.desc ? `<div style="font-size:11px;color:var(--text-muted);margin-top:4px;line-height:1.5">${escHtml(n.desc)}</div>` : ''}
+            ${n.summary ? `<div class="news-desc">${escHtml(n.summary)}</div>` : ''}
           </div>`;
       }).join('');
     }
@@ -3858,12 +4078,11 @@ function renderDashboardNews() {
     if (agents.length === 0) {
       agentBody.innerHTML = '<div class="news-error">暂无数据，请稍后刷新</div>';
     } else {
-      agentBody.innerHTML = agents.map(a => {
-        const tagCls = a.tag === 'agent' ? 'market' : 'market';
-        return `
+      agentBody.innerHTML = staleBar + agents.map(a => `
           <div class="agent-item">
             <div class="agent-header">
-              <span class="agent-name">${escHtml(a.tagLabel || '代理商动态')}</span>
+              <span class="agent-name">${escHtml(a.kind === 'vendor' ? '原厂动态' : '代理商动态')}</span>
+              <span class="agent-tag">${escHtml(a.tagLabel || '')}</span>
             </div>
             <a href="${escAttr(a.url)}" target="_blank" rel="noopener" class="agent-news-link" title="点击跳转原文">
               <span class="agent-news-icon">&#x1F4F0;</span>
@@ -3872,38 +4091,53 @@ function renderDashboardNews() {
             <div class="agent-meta">
               <span class="news-source-badge">${escHtml(a.source)}</span>
               <span>·</span>
-              <span>${escHtml(a.time)}</span>
+              <span title="${escAttr(a.publishedAt || '')}">${escHtml(a.dateText || a.timeText)}</span>
               <span style="margin-left:auto;font-size:11px;color:var(--primary)">&#x2197; 点击跳转原文</span>
             </div>
-            ${a.desc ? `<div class="agent-desc">${escHtml(a.desc)}</div>` : ''}
-          </div>`;
-      }).join('');
+            ${a.summary ? `<div class="agent-desc">${escHtml(a.summary)}</div>` : ''}
+          </div>`).join('');
     }
   }
 }
 
+// 更新时间：固定显示到分钟（需求要求「更新时间：xxxx-xx-xx HH:mm」）
 function updateNewsRefreshTime(isError) {
-  const el = document.getElementById('news-update-time');
-  if (!el) return;
-  if (isError) {
-    el.textContent = '网络异常，显示缓存数据';
-    el.style.color = 'var(--warning)';
-  } else if (newsCache.lastUpdate) {
-    el.textContent = '更新于 ' + newsCache.lastUpdate.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-    el.style.color = 'var(--text-muted)';
-  }
+  const text = isError
+    ? (newsCache.updatedAt
+      ? '上次更新失败，展示缓存 · ' + fmtNewsDateTime(newsCache.updatedAt)
+      : '上次更新失败，暂无缓存')
+    : (newsCache.updatedAt ? '更新时间：' + fmtNewsDateTime(newsCache.updatedAt) : '');
+
+  ['news-update-time', 'agent-news-update-time'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--warning)' : 'var(--text-muted)';
+  });
+}
+
+// 每日自动更新：当天 8 点后首次进入页面时刷新一次；页面常驻时每小时检查跨天
+function newsShouldAutoUpdate() {
+  const now = new Date();
+  if (now.getHours() < NEWS_AUTO_HOUR) return false;
+  let last = '';
+  try { last = localStorage.getItem('news_last_attempt') || ''; } catch (e) { last = ''; }
+  const p2 = n => (n < 10 ? '0' : '') + n;
+  const today = now.getFullYear() + '-' + p2(now.getMonth() + 1) + '-' + p2(now.getDate());
+  return last !== today;
 }
 
 function startNewsAutoRefresh() {
   if (newsRefreshTimer) clearInterval(newsRefreshTimer);
+  // 每小时检查一次是否跨天（不做高频轮询，避免频繁请求外部站点）
   newsRefreshTimer = setInterval(() => {
-    loadDashboardNews();
-  }, 5 * 60 * 1000); // 5 minutes
+    if (newsShouldAutoUpdate()) loadDashboardNews({ force: true });
+  }, 60 * 60 * 1000);
 }
 
 function manualRefreshNews(btn) {
   if (btn) btn.classList.add('spinning');
-  loadDashboardNews().finally(() => {
+  loadDashboardNews({ force: true }).finally(() => {
     if (btn) setTimeout(() => btn.classList.remove('spinning'), 300);
   });
 }
@@ -3942,7 +4176,10 @@ function renderDashboard(container) {
         </div>
         <div class="dash-card">
           <div class="dash-card-header">
-            <h3>&#x1F4E6; 代理商动态</h3>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0">
+              <h3>&#x1F4E6; 代理商动态</h3>
+              <span class="news-time" id="agent-news-update-time"></span>
+            </div>
             <button class="refresh-btn" onclick="manualRefreshNews(this)" title="刷新新闻">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
               刷新
@@ -3951,19 +4188,369 @@ function renderDashboard(container) {
           <div class="dash-card-body" id="agent-news-body">
             <div class="news-loading"><span class="spinner"></span>正在获取最新资讯...</div>
           </div>
+          <div class="vendor-rec" id="vendor-rec-box"></div>
         </div>
       </div>
     </div>
   `;
 
-  // Render cached news immediately if available, otherwise fetch
+  // 有缓存先画出来，再按「每日一次」策略决定要不要联网更新
   if (newsCache.chipNews || newsCache.agentNews) {
     renderDashboardNews();
-    updateNewsRefreshTime();
-  } else {
-    loadDashboardNews();
+    updateNewsRefreshTime(newsCache.status === 'stale' || newsCache.status === 'seed');
   }
+  if (!newsCache.chipNews || newsCache.status === 'idle' || newsShouldAutoUpdate()) {
+    loadDashboardNews();
+  } else {
+    renderDashboardNews();
+    updateNewsRefreshTime(newsCache.status === 'stale' || newsCache.status === 'seed');
+  }
+  renderVendorRec();
   startNewsAutoRefresh();
+}
+
+/* ===== 芯片原厂 → 授权代理商推荐 =====
+   数据口径（重要）：
+   - 只收录有公开来源可查的关系，每条标依据等级：
+     · official：原厂官方文件 / 原厂合作伙伴官网 / 上市公司公告
+     · public  ：行业公开资料整理，需自行向原厂核对（界面显示「待核对」）
+   - 查不到公开信息的原厂，界面明确写「暂无公开授权信息」，只给原厂官网入口
+   - 用户可增删改：自定义项优先展示，并与内置数据合并；被手动删掉的内置项会记住不再出现
+*/
+const VENDOR_LIST = [
+  { key: 'TI', name: '德州仪器', en: 'Texas Instruments', home: 'https://www.ti.com.cn/' },
+  { key: 'NXP', name: '恩智浦', en: 'NXP', home: 'https://www.nxp.com/' },
+  { key: 'ST', name: '意法半导体', en: 'STMicroelectronics', home: 'https://www.st.com/' },
+  { key: 'Infineon', name: '英飞凌', en: 'Infineon', home: 'https://www.infineon.com/' },
+  { key: 'Renesas', name: '瑞萨电子', en: 'Renesas', home: 'https://www.renesas.com/' },
+  { key: 'Microchip', name: '微芯科技', en: 'Microchip', home: 'https://www.microchip.com/' },
+  { key: 'ADI', name: '亚德诺', en: 'Analog Devices', home: 'https://www.analog.com/' },
+  { key: 'Qualcomm', name: '高通', en: 'Qualcomm', home: 'https://www.qualcomm.com/' },
+  { key: 'NVIDIA', name: '英伟达', en: 'NVIDIA', home: 'https://www.nvidia.com/' },
+  { key: 'AMD', name: '超威半导体', en: 'AMD', home: 'https://www.amd.com/' },
+  { key: 'onsemi', name: '安森美', en: 'onsemi', home: 'https://www.onsemi.com/' },
+  { key: 'Nexperia', name: '安世半导体', en: 'Nexperia', home: 'https://www.nexperia.com/' }
+];
+
+const BUILTIN_VENDOR_AGENTS = {
+  TI: {
+    basis: 'official',
+    officialUrl: 'https://www.ti.com.cn/cn/lit/pdf/zhcb015',
+    officialLabel: 'TI 官方文件《中国授权代理商》',
+    note: '2019–2020 年渠道调整后，艾睿（Arrow）为除日本外唯一授权全线分销商；安富利、世平、文晔的 TI 代理权已于 2020 年底终止，请勿沿用旧名单。',
+    agents: [
+      { name: '艾睿电子 Arrow', scope: '全球（除日本）全线授权', basis: 'official' },
+      { name: 'Digi-Key 得捷', scope: '目录分销 / 小批量样品', basis: 'official' },
+      { name: 'Mouser 贸泽', scope: '目录分销 / 小批量样品', basis: 'official' },
+      { name: 'Macnica / TED', scope: '日本区域代理', basis: 'official' }
+    ]
+  },
+  NXP: {
+    basis: 'official',
+    officialUrl: 'https://www.nxp.com/',
+    officialLabel: 'NXP 官网（Partner / Distributor 查询）',
+    note: '安富利、世平、中电港均有官方或公开信息佐证；艾睿、文晔为行业公开整理。最终授权以 NXP 官网 Partner 页面为准。',
+    agents: [
+      { name: '安富利 Avnet', scope: '大中华区授权代理（2025 获 NXP DFAE 奖）', basis: 'official' },
+      { name: '世平 WPI', scope: '大联大旗下，官网列 NXP 为代理品牌', basis: 'official' },
+      { name: '中电港 CECport', scope: '上市公司公告披露代理 NXP', basis: 'official' },
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '文晔科技 WT', scope: '亚太区授权分销', basis: 'public' }
+    ]
+  },
+  ST: {
+    basis: 'public',
+    officialUrl: 'https://www.st.com/',
+    officialLabel: 'ST 官网（Distributors 查询）',
+    note: '以下为行业公开资料整理，非 ST 官方名单，请到官网核对后再用于商务判断。',
+    agents: [
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '世平 WPI', scope: '亚太区授权分销', basis: 'public' },
+      { name: '文晔科技 WT', scope: '亚太区授权分销', basis: 'public' }
+    ]
+  },
+  Infineon: {
+    basis: 'public',
+    officialUrl: 'https://www.infineon.com/',
+    officialLabel: '英飞凌官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '世强 Sekorm', scope: '工业 / 汽车电子授权分销', basis: 'public' },
+      { name: '贝能国际 Burnon', scope: '功率半导体授权分销', basis: 'public' }
+    ]
+  },
+  Renesas: {
+    basis: 'public',
+    officialUrl: 'https://www.renesas.com/',
+    officialLabel: '瑞萨官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '文晔科技 WT', scope: '全球授权分销', basis: 'public' },
+      { name: '大联大 WPG', scope: '亚太区授权分销', basis: 'public' },
+      { name: '中电港 CECport', scope: '中国大陆授权分销', basis: 'public' },
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' }
+    ]
+  },
+  Microchip: {
+    basis: 'public',
+    officialUrl: 'https://www.microchip.com/',
+    officialLabel: 'Microchip 官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '文晔科技 WT', scope: '全球授权分销', basis: 'public' },
+      { name: '大联大 WPG', scope: '亚太区授权分销', basis: 'public' },
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' }
+    ]
+  },
+  ADI: {
+    basis: 'public',
+    officialUrl: 'https://www.analog.com/',
+    officialLabel: 'ADI 官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '中电港 CECport', scope: '中国大陆授权分销', basis: 'public' }
+    ]
+  },
+  Qualcomm: {
+    basis: 'public',
+    officialUrl: 'https://www.qualcomm.com/',
+    officialLabel: '高通官网（Partner 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '文晔科技 WT', scope: '亚太区授权分销', basis: 'public' },
+      { name: '大联大 WPG', scope: '亚太区授权分销', basis: 'public' },
+      { name: '中电港 CECport', scope: '上市公司公告披露代理高通', basis: 'public' },
+      { name: '润欣科技', scope: '射频 / 物联网方案分销', basis: 'public' }
+    ]
+  },
+  NVIDIA: {
+    basis: 'public',
+    officialUrl: 'https://www.nvidia.com/en-us/about-nvidia/partners/',
+    officialLabel: 'NVIDIA 官方合作伙伴页面',
+    note: '行业公开资料整理，NVIDIA 渠道以 NPN 合作伙伴体系为主，请到官网核对。',
+    agents: [
+      { name: '中电港 CECport', scope: '上市公司公告披露代理 NVIDIA', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '世平 WPI', scope: '亚太区授权分销', basis: 'public' }
+    ]
+  },
+  AMD: {
+    basis: 'public',
+    officialUrl: 'https://www.amd.com/',
+    officialLabel: 'AMD 官网（Partner 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '中电港 CECport', scope: '上市公司公告披露代理 AMD', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '文晔科技 WT', scope: '亚太区授权分销', basis: 'public' }
+    ]
+  },
+  onsemi: {
+    basis: 'public',
+    officialUrl: 'https://www.onsemi.com/',
+    officialLabel: 'onsemi 官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '世平 WPI', scope: '亚太区授权分销（官网列 onsemi）', basis: 'public' },
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' },
+      { name: '世强 Sekorm', scope: '工业 / 汽车电子授权分销', basis: 'public' }
+    ]
+  },
+  Nexperia: {
+    basis: 'public',
+    officialUrl: 'https://www.nexperia.com/',
+    officialLabel: 'Nexperia 官网（Distributors 查询）',
+    note: '行业公开资料整理，非官方名单，请到官网核对。',
+    agents: [
+      { name: '世平 WPI', scope: '亚太区授权分销（官网列 Nexperia）', basis: 'public' },
+      { name: '安富利 Avnet', scope: '全球授权分销', basis: 'public' },
+      { name: '艾睿电子 Arrow', scope: '全球授权分销', basis: 'public' }
+    ]
+  }
+};
+
+let vendorRecKey = (function () {
+  try {
+    const saved = localStorage.getItem('vendor_rec_key');
+    if (saved && VENDOR_LIST.some(v => v.key === saved)) return saved;
+  } catch (e) { /* ignore */ }
+  return 'TI';
+})();
+let vendorAgentDraft = null;
+
+function vendorInfo(key) {
+  return VENDOR_LIST.find(v => v.key === key) || VENDOR_LIST[0];
+}
+
+// 合并内置 + 自定义（自定义优先，被隐藏的内置项跳过）
+function vendorAgentDetail(key) {
+  const builtin = BUILTIN_VENDOR_AGENTS[key] || null;
+  const custom = Array.isArray((appData.vendorAgents || {})[key]) ? appData.vendorAgents[key] : [];
+  const hidden = Array.isArray((appData.vendorAgentHidden || {})[key]) ? appData.vendorAgentHidden[key] : [];
+  const hiddenKeys = {};
+  hidden.forEach(n => { const k = normBrandName(n); if (k) hiddenKeys[k] = 1; });
+
+  const out = [];
+  const seen = {};
+  const push = (a, isCustom) => {
+    const k = normBrandName(a && a.name);
+    if (!k || seen[k]) return;
+    if (!isCustom && hiddenKeys[k]) return;
+    seen[k] = 1;
+    out.push({ name: String(a.name || '').trim(), scope: String(a.scope || '').trim(), basis: isCustom ? 'custom' : (a.basis || 'public'), custom: !!isCustom });
+  };
+  custom.forEach(a => push(a, true));
+  (builtin ? builtin.agents : []).forEach(a => push(a, false));
+
+  return {
+    key: key,
+    agents: out,
+    note: builtin ? builtin.note : '',
+    basis: builtin ? builtin.basis : 'none',
+    officialUrl: builtin ? builtin.officialUrl : vendorInfo(key).home,
+    officialLabel: builtin ? builtin.officialLabel : '原厂官网（站内搜 Distributors / 授权分销商）'
+  };
+}
+
+function renderVendorRec() {
+  const box = document.getElementById('vendor-rec-box');
+  if (!box) return;
+  const d = vendorAgentDetail(vendorRecKey);
+
+  const chipHtml = d.agents.length
+    ? d.agents.map(a => `
+        <span class="vr-agent ${a.custom ? 'is-custom' : ''}">
+          <b>${escHtml(a.name)}</b>
+          ${a.scope ? `<i>${escHtml(a.scope)}</i>` : ''}
+          <em class="vr-flag ${a.basis === 'custom' ? 'custom' : a.basis === 'official' ? 'official' : 'public'}">${a.basis === 'custom' ? '我的' : a.basis === 'official' ? '官方' : '待核对'}</em>
+        </span>`).join('')
+    : '<span class="vr-empty">暂无公开授权信息。可点右侧「编辑」自行补充，或到原厂官网核对后添加。</span>';
+
+  box.innerHTML = `
+    <div class="vr-head">
+      <span class="vr-title">&#x1F3AF; 原厂授权代理推荐</span>
+      <select class="vr-select" onchange="onVendorRecChange(this.value)">
+        ${VENDOR_LIST.map(v => `<option value="${escAttr(v.key)}" ${v.key === vendorRecKey ? 'selected' : ''}>${escHtml(v.name)} ${escHtml(v.key)}</option>`).join('')}
+      </select>
+      <button class="vr-edit-btn" onclick="openVendorAgentModal('${escAttr(d.key)}')">编辑</button>
+    </div>
+    <div class="vr-body">
+      <div class="vr-agents">${chipHtml}</div>
+      ${d.note ? `<div class="vr-note">${escHtml(d.note)}</div>` : (d.agents.length ? '<div class="vr-note">以上为行业公开资料整理，授权状态会变动，请以原厂页面为准。</div>' : '')}
+      <div class="vr-foot">
+        <span class="vr-src">来源：${escHtml(d.officialLabel)}</span>
+        <a href="${escAttr(d.officialUrl)}" target="_blank" rel="noopener">核对原厂授权页 &#x2197;</a>
+      </div>
+    </div>`;
+}
+
+function onVendorRecChange(key) {
+  vendorRecKey = key || 'TI';
+  try { localStorage.setItem('vendor_rec_key', vendorRecKey); } catch (e) { /* ignore */ }
+  renderVendorRec();
+}
+
+function openVendorAgentModal(key) {
+  const k = key || vendorRecKey;
+  const d = vendorAgentDetail(k);
+  vendorAgentDraft = {
+    key: k,
+    rows: d.agents.map(a => ({ name: a.name, scope: a.scope, custom: a.custom, removed: false }))
+  };
+  renderVendorAgentModal();
+}
+
+function renderVendorAgentModal() {
+  const d = vendorAgentDraft;
+  if (!d) { closeModal(); return; }
+  const info = vendorInfo(d.key);
+  const modal = document.getElementById('modal-container');
+  const rows = d.rows.map((r, i) => `
+    <div class="vr-row ${r.removed ? 'is-removed' : ''}">
+      <div class="vr-row-main">
+        <input type="text" id="vr-row-name-${i}" value="${escAttr(r.name)}" ${r.custom ? '' : 'readonly'} placeholder="代理商名称">
+        <input type="text" id="vr-row-scope-${i}" value="${escAttr(r.scope)}" placeholder="授权范围 / 说明（可留空）">
+      </div>
+      <span class="vr-row-tag">${r.custom ? '我的' : '内置'}</span>
+      <button class="btn-icon ${r.removed ? '' : 'danger'}" onclick="vendorAgentToggleRemove(${i})" title="${r.removed ? '恢复' : '删除'}">${r.removed ? '&#x21A9;' : '&#x2715;'}</button>
+    </div>`).join('');
+
+  modal.innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-header">
+          <h3>${escHtml(info.name)} ${escHtml(info.key)} · 推荐代理商</h3>
+          <button class="btn-icon" onclick="closeModal()" style="font-size:18px">&#x2715;</button>
+        </div>
+        <div class="modal-body">
+          <p class="vr-modal-tip">内置条目来自公开资料，带「官方」标记的有原厂文件或上市公司公告佐证；带「待核对」的请自行向原厂确认。内置条目不能改名，需要修改请先删除再新增。</p>
+          <div class="vr-rows">${rows || '<div class="empty-section">暂无条目，可在下方添加</div>'}</div>
+          <div class="vr-add">
+            <input type="text" id="vr-new-name" placeholder="代理商名称，如：艾睿电子 Arrow">
+            <input type="text" id="vr-new-scope" placeholder="授权范围，如：大中华区授权代理">
+            <button class="btn btn-sm" onclick="vendorAgentAddRow()">+ 添加</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" onclick="closeModal()">取消</button>
+          <button class="btn btn-primary" onclick="saveVendorAgentDraft()">保存</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function vendorAgentToggleRemove(i) {
+  if (!vendorAgentDraft || !vendorAgentDraft.rows[i]) return;
+  vendorAgentDraft.rows[i].removed = !vendorAgentDraft.rows[i].removed;
+  renderVendorAgentModal();
+}
+
+function vendorAgentAddRow() {
+  if (!vendorAgentDraft) return;
+  const nameEl = document.getElementById('vr-new-name');
+  const scopeEl = document.getElementById('vr-new-scope');
+  const name = ((nameEl && nameEl.value) || '').trim();
+  const scope = ((scopeEl && scopeEl.value) || '').trim();
+  if (!name) { showToast('请先填写代理商名称', 'error'); return; }
+  if (vendorAgentDraft.rows.some(r => !r.removed && normBrandName(r.name) === normBrandName(name))) {
+    showToast('这条代理商已经在列表里了', 'error');
+    return;
+  }
+  vendorAgentDraft.rows.push({ name: name, scope: scope, custom: true, removed: false });
+  renderVendorAgentModal();
+}
+
+function saveVendorAgentDraft() {
+  const d = vendorAgentDraft;
+  if (!d) { closeModal(); return; }
+  // 保存前把输入框里的最新值读回来
+  d.rows.forEach((r, i) => {
+    const ne = document.getElementById('vr-row-name-' + i);
+    const se = document.getElementById('vr-row-scope-' + i);
+    if (ne && r.custom) r.name = String(ne.value || '').trim();
+    if (se) r.scope = String(se.value || '').trim();
+  });
+
+  const custom = d.rows.filter(r => r.custom && !r.removed && r.name)
+    .map(r => ({ name: r.name, scope: r.scope || '', updatedAt: new Date().toISOString() }));
+  const hidden = d.rows.filter(r => !r.custom && r.removed && r.name).map(r => r.name);
+
+  if (!appData.vendorAgents) appData.vendorAgents = {};
+  if (!appData.vendorAgentHidden) appData.vendorAgentHidden = {};
+  appData.vendorAgents[d.key] = custom;
+  appData.vendorAgentHidden[d.key] = hidden;
+
+  vendorAgentDraft = null;
+  saveData();
+  closeModal();
+  renderVendorRec();
+  showToast('已保存：' + vendorInfo(d.key).name + ' 推荐代理商 ' + (custom.length + (vendorAgentDetail(d.key).agents.length - custom.length)) + ' 条', 'success');
 }
 
 function openSupplierModal(editId) {
