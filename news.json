@@ -1,22 +1,25 @@
 {
   "ok": true,
-  "generatedAt": "2026-10-22T07:24:37.580Z",
-  "generatedAtBeijing": "2026-10-22T15:24:37.580+08:00",
+  "generatedAt": "2026-10-23T04:21:19.197Z",
+  "generatedAtBeijing": "2026-10-23T12:21:19.197+08:00",
   "sources": [
     {
       "name": "国际电子商情",
-      "ok": true,
-      "count": 60
+      "ok": false,
+      "count": 0,
+      "error": "This operation was aborted"
     },
     {
       "name": "集微网",
-      "ok": true,
-      "count": 24
+      "ok": false,
+      "count": 0,
+      "error": "fetch failed"
     },
     {
       "name": "电子工程专辑",
-      "ok": true,
-      "count": 15
+      "ok": false,
+      "count": 0,
+      "error": "This operation was aborted"
     },
     {
       "name": "东方财富",
@@ -30,8 +33,9 @@
     },
     {
       "name": "文晔科技",
-      "ok": true,
-      "count": 4
+      "ok": false,
+      "count": 0,
+      "error": "This operation was aborted"
     },
     {
       "name": "大联大",
@@ -41,35 +45,11 @@
   ],
   "chip": [
     {
-      "sourceName": "集微网",
-      "title": "一条更陡的曲线：PCB三季报里的算力“定价权”",
-      "summary": "增速为什么在第三季度突然变陡？",
-      "url": "https://www.ijiwei.com/n/1122626",
-      "publishedAt": "2026-10-22T07:24:37.580Z",
-      "source": "集微网",
-      "timeApprox": true,
-      "tag": "chip",
-      "tagLabel": "芯片产业",
-      "kind": ""
-    },
-    {
-      "sourceName": "集微网",
-      "title": "江波龙前三季预盈最高149亿：近20倍利润背后，存储周期开始换挡",
-      "summary": "",
-      "url": "https://www.ijiwei.com/n/1119879",
-      "publishedAt": "2026-10-22T07:17:37.580Z",
-      "source": "集微网",
-      "timeApprox": true,
-      "tag": "chip",
-      "tagLabel": "芯片产业",
-      "kind": ""
-    },
-    {
       "sourceName": "东方财富",
-      "title": "宏华数科成立印核科技公司 含集成电路芯片业务",
-      "summary": "【宏华数科成立印核科技公司 含集成电路芯片业务】企查查APP显示，近日，宏华印核科技（杭州）有限公司成立，经营范围包含：集成电路设计；集成电路芯片及产品销售等。企查查股权穿透显示，该公司由宏华数科全资持股。",
-      "url": "https://finance.eastmoney.com/a/202610223904053847.html",
-      "publishedAt": "2026-10-22T07:08:02.000Z",
+      "title": "纳真科技2027年芯片产能已被客户锁定",
+      "summary": "【纳真科技2027年芯片产能已被客户锁定】记者获悉，纳真科技位于青岛经济技术开发区王台街道的InP激光器芯片工厂已完成洁净厂房装修，MOCVD等核心工艺设备正陆续进场安装调试。据了解，该工厂2027年中开始量产，随着逐步产能爬坡，2027年全年产能预计超1亿颗，叠加现有光芯片产能，年度整体产能已被客户订单需求全部覆盖。",
+      "url": "https://finance.eastmoney.com/a/202610233905838527.html",
+      "publishedAt": "2026-10-23T03:41:53.000Z",
       "source": "东方财富",
       "tag": "chip",
       "tagLabel": "芯片产业",
@@ -77,57 +57,77 @@
     },
     {
       "sourceName": "东方财富",
-      "title": "特斯拉、英伟达将向三星机械工厂投资28亿美元",
-      "summary": "特斯拉、英伟达将向三星机械工厂投资28亿美元。",
-      "url": "https://finance.eastmoney.com/a/202610223904033139.html",
-      "publishedAt": "2026-10-22T06:50:48.000Z",
+      "title": "昔日“彩电一哥”结束34年A股生涯，华润能让康佳绝地翻身吗？",
+      "summary": "【昔日“彩电一哥”结束34年A股生涯，华润能让康佳绝地翻身吗？】10月23日，曾被誉为“彩电一哥”的康佳集团，正式迎来上市生涯的终点。这家拥有46年历史、1992年A+B股登陆深交所的老牌深圳企业，在多年跨界自救无果、财务持续恶化之下，选择主动退场规避强制退市风险。过去数年，康佳先后布局白电、半导体、储能等赛道，却未能",
+      "url": "https://finance.eastmoney.com/a/202610233905542596.html",
+      "publishedAt": "2026-10-23T02:49:00.000Z",
       "source": "东方财富",
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
-    },
-    {
-      "sourceName": "国际电子商情",
-      "title": "英伟达联合六家供应商扩产：三年基板产能增2.5倍，光引擎2027年提至15倍",
-      "summary": "英伟达联合六家供应商全球扩产",
-      "url": "https://www.esmchina.com/news/14714.html",
-      "publishedAt": "2026-10-22T02:58:41.000Z",
-      "source": "国际电子商情",
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
-    },
-    {
-      "sourceName": "电子工程专辑",
-      "title": "传三星、SK海力士升级中国工厂，应对本土竞争与AI需求浪潮",
-      "summary": "美国商务部工业与安全局未直接回应相关审批状态的提问，仅重申其2025年声明：将为这些企业运营在华现有工厂发放许可证申请，但不批准产能扩张或技术升级。",
-      "url": "https://www.eet-china.com/news/202610221355.html",
-      "publishedAt": "2026-10-22T01:00:00.000Z",
-      "source": "电子工程专辑",
-      "timeApprox": true,
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
-    },
-    {
-      "sourceName": "国际电子商情",
-      "title": "CKL超科林品牌焕新：以“在中国，为中国”战略深耕本土半导体设备市场",
-      "summary": "2026年，中国半导体设备国产化继续推进。其中，零部件配套正在成为设备本土化落地的关键一环。",
-      "url": "https://www.esmchina.com/news/14711.html",
-      "publishedAt": "2026-10-22T00:50:36.000Z",
-      "source": "国际电子商情",
       "tag": "chip",
       "tagLabel": "芯片产业",
       "kind": ""
     },
     {
-      "sourceName": "电子工程专辑",
-      "title": "不做模型，就做不好GPU：NVIDIA开源模型的底层逻辑",
-      "summary": "",
-      "url": "https://www.eet-china.com/news/202610217640.html",
-      "publishedAt": "2026-10-21T01:00:00.000Z",
-      "source": "电子工程专辑",
-      "timeApprox": true,
+      "sourceName": "华尔街见闻",
+      "title": "被曝将推手机子品牌“星芒”？华为回应",
+      "summary": "10月11日，“华为被曝将推子品牌星芒”话题登上微博热搜。消息称，“星芒”定位或对标早年荣耀，主打中端性价比市场，将搭载麒麟8系自研芯片与原生鸿蒙系统，但不配备卫星通信等高端旗舰功能。针对上述传闻，华为相关人士向北京商报记者回应称，请以官方信息为准。12日上午，界面新闻记者以消费者身份咨询华为客服，工作人员表示：“目前",
+      "url": "https://wallstreetcn.com/livenews/3176860",
+      "publishedAt": "2026-10-12T02:37:53.000Z",
+      "source": "华尔街见闻",
+      "tag": "chip",
+      "tagLabel": "芯片产业",
+      "kind": ""
+    },
+    {
+      "sourceName": "华尔街见闻",
+      "title": "星凡智能发布“物理AI”全栈产品矩阵",
+      "summary": "9月22日，星凡智能（XFEON）发布覆盖“芯、数、算、法”的物理AI产品矩阵，旨在构建物理AGI底层闭环，推动AI从生成“Token”转向物理世界“Action”。 硬件侧，首发端侧芯片星核S1（等效算力105 TOPS/功耗25W），并针对机器人、商业航天及边缘计算推出R/K/E系列，已导入头部具身智能及星载供应链",
+      "url": "https://wallstreetcn.com/livenews/3168903",
+      "publishedAt": "2026-09-22T11:20:19.000Z",
+      "source": "华尔街见闻",
+      "tag": "chip",
+      "tagLabel": "芯片产业",
+      "kind": ""
+    },
+    {
+      "sourceName": "华尔街见闻",
+      "title": "vivo预研蓝心30B MoE端侧大模型",
+      "summary": "9月16日，vivo副总裁周围在2026 vivo开发者大会上透露，vivo正在预研蓝心30B MoE端侧大模型，探索在手机上应用。他表示，内存和算力是大模型在手机端运行的主要门槛，若模型能力大幅提升、每次仅需加载约3—12GB内存，手机有望承担目前由云端大模型完成的推理任务。（全天候科技）",
+      "url": "https://wallstreetcn.com/livenews/3165938",
+      "publishedAt": "2026-09-16T03:22:43.000Z",
+      "source": "华尔街见闻",
+      "tag": "chip",
+      "tagLabel": "芯片产业",
+      "kind": ""
+    },
+    {
+      "sourceName": "华尔街见闻",
+      "title": "直击帕西尼“ONE FOR ALL”：感知、智能、执行连成一条因果链",
+      "summary": "9月7日，帕西尼在深圳宝安“ONE FOR ALL”物理AI展厅举办媒体开放日，首度完整披露PIE（感知-智能-执行）全栈战略。过去一个月，公司相继完成股份制改革与10亿元新一轮融资，落地北京总部、形成总部功能与全国协同布局升级，并发布搭载全球首款量产真6D触觉感知芯片GEN4 FUSE的PX6AX GEN4产品矩阵。",
+      "url": "https://wallstreetcn.com/livenews/3161940",
+      "publishedAt": "2026-09-08T11:38:34.000Z",
+      "source": "华尔街见闻",
+      "tag": "chip",
+      "tagLabel": "芯片产业",
+      "kind": ""
+    },
+    {
+      "sourceName": "华尔街见闻",
+      "title": "网信办等七部门：探索算力设施800V高压直流供电架构 推动超百千瓦单机柜部署",
+      "summary": "《促进数字化绿色化协同转型发展实施方案（2026-2030年）》提到，算力设施绿色低碳发展。强化算力设施绿色设计，支持液冷散热、余热回收、低功耗芯片等技术创新和推广应用，探索算力设施800V高压直流供电架构，推动超百千瓦单机柜部署。优化算力设施绿色运营模式，聚焦数字孪生仿真、多模态感知等关键技术，深化人工智能算法在绿色",
+      "url": "https://wallstreetcn.com/livenews/3160572",
+      "publishedAt": "2026-09-04T10:06:20.000Z",
+      "source": "华尔街见闻",
+      "tag": "chip",
+      "tagLabel": "芯片产业",
+      "kind": ""
+    },
+    {
+      "sourceName": "华尔街见闻",
+      "title": "豆包手机搭载长鑫科技LPDDR5X内存，系国产10667Mbps高速率LPDDR5X芯片首次量产应用",
+      "summary": "据长鑫存储和努比亚手机官方微博，字节与中兴联合研发的新一代豆包手机——努比亚NaviX Ultra，将搭载长鑫最高速率10667Mbps的LPDDR5X内存。这也是国产10667Mbps高速率LPDDR5X芯片首次量产应用。",
+      "url": "https://wallstreetcn.com/livenews/3160330",
+      "publishedAt": "2026-09-04T04:34:48.000Z",
+      "source": "华尔街见闻",
       "tag": "chip",
       "tagLabel": "芯片产业",
       "kind": ""
@@ -135,103 +135,57 @@
   ],
   "agent": [
     {
-      "sourceName": "大联大",
-      "title": "量产爬坡期，芯片分销商正在变成机器人厂商的“研发外援”",
-      "summary": "大联大控股旗下世平集团、品佳集团、诠鼎集团、友尚集团等亚太区元器件分销领先品牌，专注提供热点解决方案，包括计算机及外围、手机与通讯、消费电子、车用电子、工业电子与一般应用六大产业，协助客户抢得市场先机。",
-      "url": "https://www.wpgholdings.com/news/detail/zhcn/operation/26065",
-      "publishedAt": "2026-10-21T07:24:37.580Z",
-      "source": "大联大",
-      "timeApprox": true,
+      "sourceName": "东方财富",
+      "title": "意法半导体拟终止力源信息代理合作",
+      "summary": "【意法半导体拟终止力源信息代理合作】10月23日，据芯片产业链人士处消息，力源信息已向部分客户发送通知称，意法半导体（简称“ST”）拟终止与力源信息的代理经销合作关系，双方正就终止相关事宜及后续业务衔接安排进行沟通协商。",
+      "url": "https://finance.eastmoney.com/a/202610233905686890.html",
+      "publishedAt": "2026-10-23T03:01:04.000Z",
+      "source": "东方财富",
       "tag": "agent",
       "tagLabel": "代理商",
       "kind": "distributor"
     },
     {
       "sourceName": "东方财富",
-      "title": "特斯拉、英伟达将向三星机械工厂投资28亿美元",
-      "summary": "特斯拉、英伟达将向三星机械工厂投资28亿美元。",
-      "url": "https://finance.eastmoney.com/a/202610223904033139.html",
-      "publishedAt": "2026-10-22T06:50:48.000Z",
+      "title": "小马智行联手inDrive在哈萨克斯坦试点Robotaxi",
+      "summary": "【小马智行联手inDrive在哈萨克斯坦试点Robotaxi】10月23日，小马智行宣布，与全球出行及配送平台inDrive、英伟达（NVIDIA）签署合作备忘录，共同推动自动驾驶出行产品及应用落地。哈萨克斯坦将成为该合作的首个试点市场，这也是小马智行首次将全球业务版图拓展至中亚地区。小马智行与inDrive将在与哈萨",
+      "url": "https://finance.eastmoney.com/a/202610233905840466.html",
+      "publishedAt": "2026-10-23T04:04:18.000Z",
       "source": "东方财富",
       "tag": "vendor",
       "tagLabel": "原厂",
       "kind": "vendor"
     },
     {
-      "sourceName": "国际电子商情",
-      "title": "“我们愿意往前走一步”——安富利以工程实力推动AI从云端走向物理世界",
-      "summary": "“安富利将紧跟时代发展趋势，同客户一起推进业务发展。”",
-      "url": "https://www.esmchina.com/news/14697.html",
-      "publishedAt": "2026-10-16T05:41:22.000Z",
-      "source": "国际电子商情",
+      "sourceName": "大联大",
+      "title": "量产爬坡期，芯片分销商正在变成机器人厂商的“研发外援”",
+      "summary": "大联大控股旗下世平集团、品佳集团、诠鼎集团、友尚集团等亚太区元器件分销领先品牌，专注提供热点解决方案，包括计算机及外围、手机与通讯、消费电子、车用电子、工业电子与一般应用六大产业，协助客户抢得市场先机。",
+      "url": "https://www.wpgholdings.com/news/detail/zhcn/operation/26065",
+      "publishedAt": "2026-10-22T04:21:19.197Z",
+      "source": "大联大",
+      "timeApprox": true,
       "tag": "agent",
       "tagLabel": "代理商",
       "kind": "distributor"
-    },
-    {
-      "sourceName": "集微网",
-      "title": "英伟达实质收购Groq后首度出手！下一代AI芯片架构大转向 弃SRAM改采3D堆叠DRAM",
-      "summary": "外媒报道称，近期遭英伟达实质性收购的芯片公司Groq正评估在下一代芯片中引入3D堆叠DRAM封装技术3DS，借此摆脱传统SRAM架构的容量瓶颈。",
-      "url": "https://www.ijiwei.com/n/1122593",
-      "publishedAt": "2026-10-22T04:57:37.580Z",
-      "source": "集微网",
-      "timeApprox": true,
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
     },
     {
       "sourceName": "大联大",
       "title": "大联大(TWSE:3702) 9月及第三季营收双创历史新高，9月营收首破2,000亿元达2,195.9亿元，第三季营收首破5,000亿元超越财测高标达5,079.3亿元",
       "summary": "大联大控股旗下世平集团、品佳集团、诠鼎集团、友尚集团等亚太区元器件分销领先品牌，专注提供热点解决方案，包括计算机及外围、手机与通讯、消费电子、车用电子、工业电子与一般应用六大产业，协助客户抢得市场先机。",
       "url": "https://www.wpgholdings.com/news/detail/zhcn/revenue/26061",
-      "publishedAt": "2026-10-20T07:24:37.580Z",
+      "publishedAt": "2026-10-21T04:21:19.197Z",
       "source": "大联大",
       "timeApprox": true,
       "tag": "agent",
       "tagLabel": "代理商",
       "kind": "distributor"
-    },
-    {
-      "sourceName": "国际电子商情",
-      "title": "英伟达联合六家供应商扩产：三年基板产能增2.5倍，光引擎2027年提至15倍",
-      "summary": "英伟达联合六家供应商全球扩产",
-      "url": "https://www.esmchina.com/news/14714.html",
-      "publishedAt": "2026-10-22T02:58:41.000Z",
-      "source": "国际电子商情",
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
-    },
-    {
-      "sourceName": "国际电子商情",
-      "title": "深圳华强前三季度净利预增60%-90%，存储产品线出货额大幅增长",
-      "summary": "净利同比+60%至90%！这家本土分销巨头公布前三季业绩预告",
-      "url": "https://www.esmchina.com/news/14696.html",
-      "publishedAt": "2026-10-16T04:19:55.000Z",
-      "source": "国际电子商情",
-      "tag": "agent",
-      "tagLabel": "代理商",
-      "kind": "distributor"
-    },
-    {
-      "sourceName": "电子工程专辑",
-      "title": "传三星、SK海力士升级中国工厂，应对本土竞争与AI需求浪潮",
-      "summary": "美国商务部工业与安全局未直接回应相关审批状态的提问，仅重申其2025年声明：将为这些企业运营在华现有工厂发放许可证申请，但不批准产能扩张或技术升级。",
-      "url": "https://www.eet-china.com/news/202610221355.html",
-      "publishedAt": "2026-10-22T01:00:00.000Z",
-      "source": "电子工程专辑",
-      "timeApprox": true,
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
     },
     {
       "sourceName": "大联大",
       "title": "大联大人形机器人布局曝光，行业商机或不在整机？",
       "summary": "大联大控股旗下世平集团、品佳集团、诠鼎集团、友尚集团等亚太区元器件分销领先品牌，专注提供热点解决方案，包括计算机及外围、手机与通讯、消费电子、车用电子、工业电子与一般应用六大产业，协助客户抢得市场先机。",
       "url": "https://www.wpgholdings.com/news/detail/zhcn/operation/26058",
-      "publishedAt": "2026-10-19T07:24:37.580Z",
+      "publishedAt": "2026-10-20T04:21:19.197Z",
       "source": "大联大",
       "timeApprox": true,
       "tag": "agent",
@@ -239,15 +193,16 @@
       "kind": "distributor"
     },
     {
-      "sourceName": "国际电子商情",
-      "title": "高通11月开启全球绩效裁员",
-      "summary": "当地时间10月19日，高通首席执行官克里斯蒂亚诺·阿蒙向全员发送内部备忘录称，公司将在年度绩效考核结束后实施“以绩效为导向的全球裁员”，相关通知预计从11月起陆续发出。",
-      "url": "https://www.esmchina.com/news/14709.html",
-      "publishedAt": "2026-10-21T01:20:24.000Z",
-      "source": "国际电子商情",
-      "tag": "vendor",
-      "tagLabel": "原厂",
-      "kind": "vendor"
+      "sourceName": "大联大",
+      "title": "大联大荣获“2026年度硬核芯生态先锋奖”，以数智引擎驱动中国芯高质量发展！",
+      "summary": "大联大,WPG,奖项,荣誉,芯师爷,硬核芯",
+      "url": "https://www.wpgholdings.com/news/detail/zhcn/operation/26053",
+      "publishedAt": "2026-10-19T04:21:19.197Z",
+      "source": "大联大",
+      "timeApprox": true,
+      "tag": "agent",
+      "tagLabel": "代理商",
+      "kind": "distributor"
     }
   ]
 }
